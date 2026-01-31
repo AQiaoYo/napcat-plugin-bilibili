@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NapCat 插件仪表盘 · 模板插件</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans SC';
+            padding: 20px;
+            color: #222
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            background: #fff
+        }
+
+        pre {
+            background: #f7f7f7;
+            padding: 12px;
+            border-radius: 6px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>插件仪表盘（模板）</h1>
+        <p>这是一个通用的插件仪表盘模板。请在开发新插件时替换或扩展此页面。</p>
+        <h3>快速提示</h3>
+        <ul>
+            <li>路由前缀由后端 <code>ROUTE_PREFIX</code> 控制，默认：<code>/plugin-template</code></li>
+            <li>插件可通过 REST 接口读取/保存配置：<code>GET /plugin-template/config</code></li>
+            <li>通过脚本 <code>/plugin-template/static/plugin-info.js</code> 可以获取注入的插件名</li>
+        </ul>
+        <h3>示例：使用 authFetch</h3>
+        <pre>
+            <code>
+            async function authFetch(path, opts = {}) {
+                const token = new URLSearchParams(location.search).get('webui_token') || '';
+                const url = `/plugin-template${path}?webui_token=${token}`;
+                const res = await fetch(url, opts);
+                return res.json();
+                }
+            </code>
+        </pre>
+    </div>
+</body>
+
+</html>

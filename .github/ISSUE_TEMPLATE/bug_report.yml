@@ -1,0 +1,108 @@
+name: Bug 报告
+description: 报告一个 Bug 或异常行为
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你提交 Bug 报告！请尽可能详细地填写以下信息，以便我们快速定位和解决问题。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 清晰简洁地描述遇到的问题
+      placeholder: 例如：定时清理任务没有按时执行...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 详细描述如何复现这个问题
+      placeholder: |
+        1. 打开 WebUI 仪表盘
+        2. 点击某个按钮
+        3. 查看日志
+        4. 发现错误...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 描述你期望发生的情况
+      placeholder: 例如：定时任务应该在配置的时间自动执行清理...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 描述实际发生的情况
+      placeholder: 例如：定时任务完全没有触发，日志中没有任何记录...
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: 插件版本
+      description: 插件的版本号
+      placeholder: 例如：v1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: napcat-version
+    attributes:
+      label: NapCat 版本
+      description: NapCat 的版本号
+      placeholder: 例如：v1.0.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Docker
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: 相关配置
+      description: 如果与配置相关，请粘贴相关配置（注意隐藏敏感信息如 QQ 号）
+      placeholder: |
+        {
+          "enabled": true,
+          "globalCron": "0 8 * * *",
+          "inactiveDays": 30,
+          "dryRun": true
+        }
+      render: json
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志信息
+      description: 如果有相关日志，请粘贴在这里
+      placeholder: 粘贴 NapCat 日志中与该问题相关的部分...
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 补充信息
+      description: 其他任何可能有帮助的信息，如截图、相关链接等
