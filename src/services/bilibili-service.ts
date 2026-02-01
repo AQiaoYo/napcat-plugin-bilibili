@@ -3,6 +3,8 @@
  * 提供 B 站链接解析和视频信息获取功能
  */
 
+import fs from 'fs';
+import path from 'path';
 import { pluginState } from '../core/state';
 import type { BilibiliVideoInfo, BilibiliApiResponse } from '../types';
 
@@ -30,6 +32,19 @@ const BILI_MESSAGE_PATTERN = new RegExp(
 
 /** B 站视频信息 API */
 const BILIBILI_VIDEO_INFO_API = 'https://api.bilibili.com/x/web-interface/view';
+
+/** B 站视频播放 URL API（用于获取下载链接） */
+const BILIBILI_PLAYURL_API = 'https://api.bilibili.com/x/player/playurl';
+
+/** 临时视频存储目录 */
+const TEMP_VIDEO_DIR = 'bilibili_videos';
+
+/** 默认请求头 */
+const DEFAULT_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Referer': 'https://www.bilibili.com/',
+    'Accept': 'application/json'
+};
 
 // ==================== 工具函数 ====================
 
@@ -318,6 +333,269 @@ export function buildVideoMessage(videoInfo: BilibiliVideoInfo): Array<{ type: s
         type: 'text',
         data: { text: textContent }
     });
+
+    return messages;
+}
+
+// ==================== 视频下载相关 ====================
+
+/**
+ * 视频播放 URL 信息
+ */
+export interface VideoPlayUrlInfo {
+    /** 视频流 URL */
+    videoUrl: string;
+    /** 视频质量 */
+    quality: number;
+    /** 视频格式 */
+    format: string;
+    /** 视频时长 (秒) */
+    timelength: number;
+    /** 预估大小 (字节) */
+    size?: number;
+}
+
+/**
+ * 获取视频临时目录
+ */
+function getTempVideoDir(): string {
+    const tempDir = path.join(pluginState.dataPath || process.cwd(), TEMP_VIDEO_DIR);
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+    }
+    return tempDir;
+}
+
+/**
+ * 获取视频播放 URL
+ * @param options 视频标识
+ * @returns 播放 URL 信息或 null
+ */
+export async function fetchVideoPlayUrl(options: { bvid?: string; aid?: number; cid: number }): Promise<VideoPlayUrlInfo | null> {
+    try {
+        const { bvid, aid, cid } = options;
+
+        if (!cid) {
+            pluginState.log('error', '获取视频播放URL失败: 未提供 cid');
+            return null;
+        }
+
+        // 构建请求 URL
+        const params = new URLSearchParams();
+        if (bvid) {
+            params.set('bvid', bvid);
+        } else if (aid) {
+            params.set('avid', aid.toString());
+        }
+        params.set('cid', cid.toString());
+        params.set('qn', '64'); // 720P 画质
+        params.set('fnval', '1'); // MP4 格式
+        params.set('fnver', '0');
+        params.set('fourk', '0');
+
+        const url = `${BILIBILI_PLAYURL_API}?${params.toString()}`;
+        pluginState.logDebug(`请求视频播放URL: ${url}`);
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: DEFAULT_HEADERS
+        });
+
+        if (!response.ok) {
+            pluginState.log('error', `请求视频播放URL失败: HTTP ${response.status}`);
+            return null;
+        }
+
+        const data = await response.json() as BilibiliApiResponse<any>;
+
+        if (data.code !== 0) {
+            pluginState.log('warn', `B站 API 返回错误: code=${data.code}, message=${data.message}`);
+            return null;
+        }
+
+        const playData = data.data;
+        if (!playData?.durl || playData.durl.length === 0) {
+            pluginState.log('warn', '未找到可用的视频下载链接');
+            return null;
+        }
+
+        const firstUrl = playData.durl[0];
+        pluginState.logDebug(`获取视频播放URL成功: quality=${playData.quality}`);
+
+        return {
+            videoUrl: firstUrl.url,
+            quality: playData.quality,
+            format: playData.format || 'mp4',
+            timelength: playData.timelength / 1000, // 转换为秒
+            size: firstUrl.size
+        };
+    } catch (error) {
+        pluginState.log('error', '获取视频播放URL异常:', error);
+        return null;
+    }
+}
+
+/**
+ * 下载视频到本地
+ * @param videoUrl 视频 URL
+ * @param bvid BV 号
+ * @param maxSizeMB 最大大小限制 (MB)
+ * @returns 本地文件路径或 null
+ */
+export async function downloadVideo(videoUrl: string, bvid: string, maxSizeMB: number = 100): Promise<string | null> {
+    try {
+        pluginState.logDebug(`开始下载视频: ${bvid}`);
+
+        // 获取视频文件大小（通过 HEAD 请求）
+        try {
+            const headResponse = await fetch(videoUrl, {
+                method: 'HEAD',
+                headers: {
+                    ...DEFAULT_HEADERS,
+                    'Range': 'bytes=0-0'
+                }
+            });
+
+            const contentLength = headResponse.headers.get('content-length');
+            if (contentLength) {
+                const sizeMB = parseInt(contentLength, 10) / 1024 / 1024;
+                if (sizeMB > maxSizeMB) {
+                    pluginState.log('warn', `视频大小 ${sizeMB.toFixed(2)}MB 超过限制 ${maxSizeMB}MB，跳过下载`);
+                    return null;
+                }
+                pluginState.logDebug(`视频大小: ${sizeMB.toFixed(2)}MB`);
+            }
+        } catch (e) {
+            pluginState.logDebug('无法获取视频大小，继续下载');
+        }
+
+        // 下载视频
+        const response = await fetch(videoUrl, {
+            method: 'GET',
+            headers: {
+                ...DEFAULT_HEADERS,
+                'Accept': '*/*'
+            }
+        });
+
+        if (!response.ok) {
+            pluginState.log('error', `下载视频失败: HTTP ${response.status}`);
+            return null;
+        }
+
+        const buffer = await response.arrayBuffer();
+        const tempDir = getTempVideoDir();
+        const fileName = `${bvid}_${Date.now()}.mp4`;
+        const filePath = path.join(tempDir, fileName);
+
+        fs.writeFileSync(filePath, Buffer.from(buffer));
+        pluginState.log('info', `视频下载完成: ${filePath} (${(buffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
+
+        return filePath;
+    } catch (error) {
+        pluginState.log('error', '下载视频异常:', error);
+        return null;
+    }
+}
+
+/**
+ * 清理临时视频文件
+ * @param filePath 文件路径
+ */
+export function cleanupTempVideo(filePath: string): void {
+    try {
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            pluginState.logDebug(`已清理临时视频: ${filePath}`);
+        }
+    } catch (error) {
+        pluginState.log('warn', `清理临时视频失败: ${filePath}`, error);
+    }
+}
+
+/**
+ * 解析并获取完整视频信息（包含下载 URL）
+ * @param text 消息文本
+ * @returns 视频信息和下载链接
+ */
+export async function parseAndFetchVideoWithDownload(text: string): Promise<{
+    videoInfo: BilibiliVideoInfo;
+    playUrl: VideoPlayUrlInfo | null;
+} | null> {
+    const videoInfo = await parseAndFetchVideoInfo(text);
+    if (!videoInfo) {
+        return null;
+    }
+
+    // 获取 cid（视频分P的ID，默认第一P）
+    const cid = videoInfo.cid || videoInfo.pages?.[0]?.cid;
+    if (!cid) {
+        pluginState.log('warn', '无法获取视频 cid，无法获取下载链接');
+        return { videoInfo, playUrl: null };
+    }
+
+    // 获取播放 URL
+    const playUrl = await fetchVideoPlayUrl({
+        bvid: videoInfo.bvid,
+        cid
+    });
+
+    return { videoInfo, playUrl };
+}
+
+/**
+ * 构建包含视频的完整消息
+ * @param videoInfo 视频信息
+ * @param videoFilePath 视频本地路径 (可选)
+ * @returns 消息内容数组
+ */
+export function buildVideoMessageWithFile(
+    videoInfo: BilibiliVideoInfo,
+    videoFilePath?: string | null
+): Array<{ type: string; data: any }> {
+    const messages: Array<{ type: string; data: any }> = [];
+
+    // 封面图片
+    if (videoInfo.pic) {
+        messages.push({
+            type: 'image',
+            data: { url: videoInfo.pic }
+        });
+    }
+
+    // 视频信息文本
+    const duration = formatDuration(videoInfo.duration);
+    const view = formatNumber(videoInfo.stat.view);
+    const danmaku = formatNumber(videoInfo.stat.danmaku);
+    const like = formatNumber(videoInfo.stat.like);
+    const coin = formatNumber(videoInfo.stat.coin);
+    const favorite = formatNumber(videoInfo.stat.favorite);
+
+    const textContent = [
+        `🎬 ${videoInfo.title}`,
+        ``,
+        `👤 UP主: ${videoInfo.owner.name}`,
+        `📁 分区: ${videoInfo.tname}`,
+        `⏱️ 时长: ${duration}`,
+        ``,
+        `▶️ ${view} 播放  💬 ${danmaku} 弹幕`,
+        `👍 ${like}  🪙 ${coin}  ⭐ ${favorite}`,
+        ``,
+        `🔗 https://www.bilibili.com/video/${videoInfo.bvid}`
+    ].join('\n');
+
+    messages.push({
+        type: 'text',
+        data: { text: textContent }
+    });
+
+    // 如果有视频文件，添加视频消息
+    if (videoFilePath) {
+        messages.push({
+            type: 'video',
+            data: { file: videoFilePath }
+        });
+    }
 
     return messages;
 }
