@@ -10,6 +10,7 @@ import type { ActionMap } from 'napcat-types/napcat-onebot/action/index';
 import type { NetworkAdapterConfig } from 'napcat-types/napcat-onebot/config/config';
 import { DEFAULT_CONFIG, getDefaultConfig } from '../config';
 import type { PluginConfig, GroupBilibiliConfig, SendMode, BilibiliCredential } from '../types';
+import { encryptString, decryptString } from '../utils/crypto-utils';
 
 /** 日志前缀 */
 const LOG_TAG = '[Bilibili]';
@@ -45,7 +46,7 @@ function sanitizeConfig(raw: unknown): PluginConfig {
         out.maxVideoSizeMB = rawMaxSize;
     }
 
-    // credential (B站登录凭据)
+    // credential (B站登录凭据) - 读取时解密
     const rawCredential = (raw as Record<string, unknown>)['credential'];
     if (isObject(rawCredential)) {
         const cred: BilibiliCredential = {
@@ -54,10 +55,11 @@ function sanitizeConfig(raw: unknown): PluginConfig {
             dedeuserid: '',
         };
         const c = rawCredential as Record<string, unknown>;
-        if (typeof c['sessdata'] === 'string') cred.sessdata = c['sessdata'];
-        if (typeof c['bili_jct'] === 'string') cred.bili_jct = c['bili_jct'];
-        if (typeof c['dedeuserid'] === 'string') cred.dedeuserid = c['dedeuserid'];
-        if (typeof c['refresh_token'] === 'string') cred.refresh_token = c['refresh_token'];
+        // 解密敏感字段
+        if (typeof c['sessdata'] === 'string') cred.sessdata = decryptString(c['sessdata']);
+        if (typeof c['bili_jct'] === 'string') cred.bili_jct = decryptString(c['bili_jct']);
+        if (typeof c['dedeuserid'] === 'string') cred.dedeuserid = decryptString(c['dedeuserid']);
+        if (typeof c['refresh_token'] === 'string') cred.refresh_token = decryptString(c['refresh_token']);
         if (typeof c['login_time'] === 'number') cred.login_time = c['login_time'];
 
         // 只有当必要字段都存在时才保存
@@ -118,10 +120,10 @@ class PluginState {
         todayParsed: number;
         lastUpdateDay: string;
     } = {
-        totalParsed: 0,
-        todayParsed: 0,
-        lastUpdateDay: new Date().toDateString()
-    };
+            totalParsed: 0,
+            todayParsed: 0,
+            lastUpdateDay: new Date().toDateString()
+        };
 
     /**
      * 通用日志方法
@@ -249,9 +251,17 @@ class PluginState {
             if (!fs.existsSync(configDir)) {
                 fs.mkdirSync(configDir, { recursive: true });
             }
-            // 合并统计信息一起保存
+            // 合并统计信息一起保存，敏感信息加密
             const dataToSave = {
                 ...configToSave,
+                // 加密 credential 中的敏感字段
+                credential: configToSave.credential ? {
+                    sessdata: encryptString(configToSave.credential.sessdata),
+                    bili_jct: encryptString(configToSave.credential.bili_jct),
+                    dedeuserid: encryptString(configToSave.credential.dedeuserid),
+                    refresh_token: configToSave.credential.refresh_token ? encryptString(configToSave.credential.refresh_token) : undefined,
+                    login_time: configToSave.credential.login_time,
+                } : undefined,
                 stats: this.stats
             };
             fs.writeFileSync(
