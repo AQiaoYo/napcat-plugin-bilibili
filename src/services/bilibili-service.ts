@@ -399,13 +399,24 @@ export async function fetchVideoPlayUrl(options: { bvid?: string; aid?: number; 
             params.set('avid', aid.toString());
         }
         params.set('cid', cid.toString());
-        params.set('qn', '80'); // 1080P 画质 (需要登录才能获取更高清晰度)
+
+        // 根据登录状态设置请求画质
+        const credential = pluginState.config.credential;
+        const isLogged = !!(credential?.sessdata);
+
+        if (isLogged) {
+            params.set('qn', '80'); // 1080P
+            params.set('fourk', '1'); // 允许 4K
+        } else {
+            params.set('qn', '64'); // 720P (通常未登录最高 480P，请求 720P 会自动降级)
+            params.set('fourk', '0');
+        }
+
         params.set('fnval', '1'); // MP4 格式
         params.set('fnver', '0');
-        params.set('fourk', '1'); // 允许 4K
 
         const url = `${BILIBILI_PLAYURL_API}?${params.toString()}`;
-        pluginState.logDebug(`请求视频播放URL: ${url}`);
+        pluginState.logDebug(`请求视频播放URL: ${url} (已登录: ${isLogged})`);
 
         const response = await fetch(url, {
             method: 'GET',
