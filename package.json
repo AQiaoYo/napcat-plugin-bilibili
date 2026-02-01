@@ -3,17 +3,17 @@
     "version": "1.0.0",
     "type": "module",
     "main": "index.mjs",
-    "description": "解析B站相关内容",
+    "description": "B站视频链接解析插件 - 自动解析群消息中的B站视频链接并发送视频信息",
     "author": "AQiaoYo",
     "license": "MIT",
     "keywords": [
         "napcat",
         "plugin",
-        "qq"
+        "qq",
+        "bilibili"
     ],
     "dependencies": {
-        "napcat-types": "0.0.11",
-        "node-cron": "^3.0.3"
+        "napcat-types": "0.0.11"
     },
     "devDependencies": {
         "@rollup/plugin-node-resolve": "^15.0.0",
@@ -23,7 +23,8 @@
         "vite": "^6.0.0"
     },
     "scripts": {
-        "build": "vite build",
+        "build": "vite build && npm run copy",
+        "copy": "node -e \"const fs=require('fs');const path=require('path');fs.cpSync('src/webui','dist/webui',{recursive:true});const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));delete pkg.devDependencies;delete pkg.scripts;fs.writeFileSync('dist/package.json',JSON.stringify(pkg,null,2));console.log('✅ 已复制 webui 和 package.json 到 dist 目录');\"",
         "watch": "vite build --watch"
     }
 }
