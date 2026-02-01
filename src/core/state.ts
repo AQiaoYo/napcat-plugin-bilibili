@@ -9,10 +9,10 @@ import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-oneb
 import type { ActionMap } from 'napcat-types/napcat-onebot/action/index';
 import type { NetworkAdapterConfig } from 'napcat-types/napcat-onebot/config/config';
 import { DEFAULT_CONFIG, getDefaultConfig } from '../config';
-import type { PluginConfig, GroupCronConfig, CleanupStats } from '../types';
+import type { PluginConfig, GroupBilibiliConfig } from '../types';
 
 /** 日志前缀 */
-const LOG_TAG = '[AutoClear]';
+const LOG_TAG = '[Bilibili]';
 
 /** 类型守卫：判断是否为对象 */
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -33,21 +33,6 @@ function sanitizeConfig(raw: unknown): PluginConfig {
         out.enabled = (raw as Record<string, unknown>)['enabled'] as boolean;
     }
 
-    // globalCron
-    if (typeof (raw as Record<string, unknown>)['globalCron'] === 'string') {
-        out.globalCron = (raw as Record<string, unknown>)['globalCron'] as string;
-    }
-
-    // inactiveDays
-    if (typeof (raw as Record<string, unknown>)['inactiveDays'] === 'number') {
-        out.inactiveDays = (raw as Record<string, unknown>)['inactiveDays'] as number;
-    }
-
-    // dryRun
-    if (typeof (raw as Record<string, unknown>)['dryRun'] === 'boolean') {
-        out.dryRun = (raw as Record<string, unknown>)['dryRun'] as boolean;
-    }
-
     // groupConfigs
     const rawGroupConfigs = (raw as Record<string, unknown>)['groupConfigs'];
     if (isObject(rawGroupConfigs)) {
@@ -55,43 +40,13 @@ function sanitizeConfig(raw: unknown): PluginConfig {
         for (const groupId of Object.keys(rawGroupConfigs as Record<string, unknown>)) {
             const groupConfig = (rawGroupConfigs as Record<string, unknown>)[groupId];
             if (isObject(groupConfig)) {
-                const cfg: GroupCronConfig = {};
+                const cfg: GroupBilibiliConfig = {};
                 if (typeof (groupConfig as Record<string, unknown>)['enabled'] === 'boolean') {
                     cfg.enabled = (groupConfig as Record<string, unknown>)['enabled'] as boolean;
-                }
-                if (typeof (groupConfig as Record<string, unknown>)['cron'] === 'string') {
-                    cfg.cron = (groupConfig as Record<string, unknown>)['cron'] as string;
-                }
-                if (typeof (groupConfig as Record<string, unknown>)['inactiveDays'] === 'number') {
-                    cfg.inactiveDays = (groupConfig as Record<string, unknown>)['inactiveDays'] as number;
-                }
-                if (typeof (groupConfig as Record<string, unknown>)['dryRun'] === 'boolean') {
-                    cfg.dryRun = (groupConfig as Record<string, unknown>)['dryRun'] as boolean;
-                }
-                if (Array.isArray((groupConfig as Record<string, unknown>)['protectedMembers'])) {
-                    cfg.protectedMembers = ((groupConfig as Record<string, unknown>)['protectedMembers'] as unknown[])
-                        .filter(v => typeof v === 'string') as string[];
-                }
-                if (typeof (groupConfig as Record<string, unknown>)['lastCleanup'] === 'number') {
-                    cfg.lastCleanup = (groupConfig as Record<string, unknown>)['lastCleanup'] as number;
-                }
-                if (typeof (groupConfig as Record<string, unknown>)['lastCleanupCount'] === 'number') {
-                    cfg.lastCleanupCount = (groupConfig as Record<string, unknown>)['lastCleanupCount'] as number;
                 }
                 out.groupConfigs![groupId] = cfg;
             }
         }
-    }
-
-    // cleanupStats
-    const rawStats = (raw as Record<string, unknown>)['cleanupStats'];
-    if (isObject(rawStats)) {
-        out.cleanupStats = {
-            totalCleanups: typeof rawStats['totalCleanups'] === 'number' ? rawStats['totalCleanups'] as number : 0,
-            totalKicked: typeof rawStats['totalKicked'] === 'number' ? rawStats['totalKicked'] as number : 0,
-            lastCleanupTime: typeof rawStats['lastCleanupTime'] === 'number' ? rawStats['lastCleanupTime'] as number : undefined,
-            groupStats: isObject(rawStats['groupStats']) ? rawStats['groupStats'] as CleanupStats['groupStats'] : {}
-        };
     }
 
     return out;
@@ -143,6 +98,26 @@ class PluginState {
     }
 
     /**
+     * 调用 OneBot API
+     * @param api API 名称
+     * @param params 参数
+     * @returns API 返回结果
+     */
+    async callApi(api: string, params: Record<string, unknown>): Promise<any> {
+        if (!this.actions) {
+            this.log('error', `调用 API ${api} 失败: actions 未初始化`);
+            return null;
+        }
+        try {
+            const result = await (this.actions as any).call(api, params);
+            return result;
+        } catch (error) {
+            this.log('error', `调用 API ${api} 失败:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * 从 ctx 初始化状态
      */
     initFromContext(ctx: NapCatPluginContext): void {
@@ -152,7 +127,7 @@ class PluginState {
         this.networkConfig = ctx.pluginManager?.config || null;
         this.configPath = ctx.configPath || '';
         this.pluginName = ctx.pluginName || '';
-        this.dataPath = ctx.configPath ? path.dirname(ctx.configPath) : path.join(process.cwd(), 'data', 'napcat-plugin-auto-clear');
+        this.dataPath = ctx.configPath ? path.dirname(ctx.configPath) : path.join(process.cwd(), 'data', 'napcat-plugin-bilibili');
         this.startTime = Date.now();
     }
 
@@ -240,21 +215,27 @@ class PluginState {
     }
 
     /**
-     * 获取群配置（优先使用群单独配置，否则使用全局配置）
+     * 获取群配置
      */
-    getGroupConfig(groupId: string): GroupCronConfig & { inactiveDays: number; dryRun: boolean } {
-        const groupCfg = this.config.groupConfigs?.[groupId] || {};
-        return {
-            ...groupCfg,
-            inactiveDays: groupCfg.inactiveDays ?? this.config.inactiveDays ?? 30,
-            dryRun: groupCfg.dryRun ?? this.config.dryRun ?? true,
-        };
+    getGroupConfig(groupId: string): GroupBilibiliConfig {
+        return this.config.groupConfigs?.[groupId] || { enabled: true };
+    }
+
+    /**
+     * 检查某个群是否启用了 B 站解析
+     */
+    isGroupEnabled(groupId: string): boolean {
+        // 首先检查全局开关
+        if (!this.config.enabled) return false;
+        // 然后检查群配置，默认为启用
+        const groupCfg = this.config.groupConfigs?.[groupId];
+        return groupCfg?.enabled !== false;
     }
 
     /**
      * 更新群配置
      */
-    updateGroupConfig(ctx: NapCatPluginContext | undefined, groupId: string, partialCfg: Partial<GroupCronConfig>): void {
+    updateGroupConfig(ctx: NapCatPluginContext | undefined, groupId: string, partialCfg: Partial<GroupBilibiliConfig>): void {
         const groupConfigs = { ...(this.config.groupConfigs || {}) };
         groupConfigs[groupId] = { ...groupConfigs[groupId], ...partialCfg };
         this.setConfig(ctx, { groupConfigs });
@@ -265,7 +246,6 @@ class PluginState {
 export const pluginState = new PluginState();
 
 // ==================== 兼容旧 API ====================
-// 以下导出是为了兼容现有代码，建议逐步迁移到使用 pluginState
 
 /** @deprecated 请使用 pluginState.config */
 export let currentConfig: PluginConfig = pluginState.config;
