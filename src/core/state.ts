@@ -112,6 +112,16 @@ class PluginState {
     initialized: boolean = false;
     /** 调试模式 */
     debug: boolean = false;
+    /** 统计信息 */
+    stats: {
+        totalParsed: number;
+        todayParsed: number;
+        lastUpdateDay: string;
+    } = {
+        totalParsed: 0,
+        todayParsed: 0,
+        lastUpdateDay: new Date().toDateString()
+    };
 
     /**
      * 通用日志方法
@@ -189,6 +199,20 @@ class PluginState {
     }
 
     /**
+     * 增加解析计数
+     */
+    incrementParsedCount(): void {
+        const today = new Date().toDateString();
+        if (this.stats.lastUpdateDay !== today) {
+            this.stats.todayParsed = 0;
+            this.stats.lastUpdateDay = today;
+        }
+        this.stats.todayParsed++;
+        this.stats.totalParsed++;
+        this.saveConfig();
+    }
+
+    /**
      * 加载配置
      */
     loadConfig(ctx?: NapCatPluginContext): void {
@@ -197,6 +221,10 @@ class PluginState {
             if (typeof configPath === 'string' && fs.existsSync(configPath)) {
                 const raw = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
                 this.config = { ...getDefaultConfig(), ...sanitizeConfig(raw) };
+                // 加载统计信息
+                if (raw.stats) {
+                    this.stats = { ...this.stats, ...raw.stats };
+                }
                 this.logDebug('📄 已加载本地配置', { path: configPath });
             } else {
                 this.config = getDefaultConfig();
@@ -221,9 +249,14 @@ class PluginState {
             if (!fs.existsSync(configDir)) {
                 fs.mkdirSync(configDir, { recursive: true });
             }
+            // 合并统计信息一起保存
+            const dataToSave = {
+                ...configToSave,
+                stats: this.stats
+            };
             fs.writeFileSync(
                 String(configPath || path.join(configDir, 'config.json')),
-                JSON.stringify(configToSave, null, 2),
+                JSON.stringify(dataToSave, null, 2),
                 'utf-8'
             );
             this.config = { ...configToSave };

@@ -207,6 +207,9 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
             messageContent = buildVideoMessage(videoInfo);
         }
 
+        // 记录统计
+        pluginState.incrementParsedCount();
+
         // 获取 Bot 信息用于伪造消息
         // 从事件中获取 self_id（Bot 的 QQ 号）
         const botUserId = String(event.self_id || '10000');
