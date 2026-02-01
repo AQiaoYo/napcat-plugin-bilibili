@@ -348,6 +348,36 @@ export function buildVideoMessage(videoInfo: BilibiliVideoInfo): Array<{ type: s
     return messages;
 }
 
+/**
+ * 分离的消息内容（用于合并转发）
+ */
+export interface SeparatedVideoMessages {
+    /** 封面图片消息段 */
+    cover?: { type: string; data: any };
+    /** 信息文本消息段 */
+    info?: { type: string; data: any };
+}
+
+/**
+ * 构建分离的视频信息消息（用于合并转发）
+ * 将封面和文本信息分开，便于构造合并转发节点
+ * @param messages 完整的消息数组
+ * @returns 分离的消息对象
+ */
+export function buildVideoInfoMessages(messages: Array<{ type: string; data: any }>): SeparatedVideoMessages {
+    const result: SeparatedVideoMessages = {};
+
+    for (const msg of messages) {
+        if (msg.type === 'image' && !result.cover) {
+            result.cover = msg;
+        } else if (msg.type === 'text' && !result.info) {
+            result.info = msg;
+        }
+    }
+
+    return result;
+}
+
 // ==================== 视频下载相关 ====================
 
 /**
