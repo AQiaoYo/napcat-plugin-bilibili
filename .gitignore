@@ -48,6 +48,9 @@ web_modules/
 # TypeScript cache
 *.tsbuildinfo
 
+# Copilot Instructions
+.github/copilot-instructions.md
+
 # Optional npm cache directory
 .npm
 
