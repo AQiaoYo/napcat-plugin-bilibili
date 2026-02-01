@@ -35,6 +35,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="v$(date +'%Y%m%d%H%M%S')"
+          fi
+          # 去掉前面的 'v' 字符用于 package.json
+          CLEAN_VERSION=$(echo $VERSION | sed 's/^v//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "clean_version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update package.json version
+        run: |
+          npm version ${{ steps.version.outputs.clean_version }} --no-git-tag-version
+
       - name: Build project
         run: pnpm run build
 
@@ -48,24 +67,13 @@ jobs:
           cp package.json release/
           cp -r src/webui release/
           
-          # 进入临时目录并压缩，这样解压后直接就是 3 个文件/文件夹
+          # 进入临时目录并压缩
           cd release
-          zip -r ../napcat-plugin-auto-clear.zip index.mjs package.json webui
+          zip -r ../napcat-plugin-bilibili.zip index.mjs package.json webui
           
       - name: Verify zip contents
         run: |
-          unzip -l napcat-plugin-auto-clear.zip
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          else
-            echo "version=v$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
-          fi
+          unzip -l napcat-plugin-bilibili.zip
 
       - name: Create Release Draft
         uses: softprops/action-gh-release@v2
@@ -73,19 +81,18 @@ jobs:
           tag_name: ${{ steps.version.outputs.version }}
           name: Release ${{ steps.version.outputs.version }}
           body: |
-            ## NapCat 自动清理不活跃群成员插件
+            ## NapCat Bilibili 视频解析插件
             
             ### 安装方法
-            1. 下载 `napcat-plugin-auto-clear.zip`
+            1. 下载 `napcat-plugin-bilibili.zip`
             2. 解压到 NapCat 的 `plugins` 目录
             3. 重启 NapCat 或在 WebUI 中启用插件
 
-            为什么不直接在 WebUi 中安装呢?
-            
             ### 更新内容
-            - 请在此处填写更新内容
+            - 自动同步版本号至 ${{ steps.version.outputs.version }}
+            - 请在此处填写更多更新内容
           draft: true
           files: |
-            napcat-plugin-auto-clear.zip
+            napcat-plugin-bilibili.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
