@@ -15,7 +15,8 @@ import {
     buildVideoMessage,
     buildVideoInfoMessages,
     downloadVideo,
-    cleanupTempVideo
+    cleanupTempVideo,
+    extractLinkFromSegments
 } from '../services/bilibili-service';
 
 /**
@@ -170,16 +171,25 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
             return;
         }
 
-        // 获取消息文本
-        const rawMessage = event.raw_message || '';
-        if (!rawMessage) return;
+        // 获取消息内容段
+        const segments = Array.isArray(event.message) ? event.message : [];
 
-        // 检测是否包含 B 站链接
-        if (!containsBilibiliLink(rawMessage)) {
+        // 尝试从小程序获取链接
+        const miniappLink = extractLinkFromSegments(segments);
+
+        // 获取消息文本（去掉小程序可能带来的干扰）
+        let rawMessage = event.raw_message || '';
+
+        // 如果包含小程序链接，则优先使用小程序链接作为 rawMessage 参与后续解析
+        if (miniappLink) {
+            pluginState.logDebug(`检测到小程序或图文链接: ${miniappLink}`);
+            rawMessage = miniappLink;
+        } else if (!containsBilibiliLink(rawMessage)) {
+            // 普通文本中也没有链接，则退出
             return;
         }
 
-        pluginState.logDebug(`检测到 B 站链接 | 群: ${groupId} | 消息: ${rawMessage.substring(0, 100)}`);
+        pluginState.logDebug(`检测到 B 站相关内容 | 群: ${groupId} | 解析目标: ${rawMessage.substring(0, 100)}`);
 
         // 提取视频 ID 用于去重检查
         const videoId = await extractVideoId(rawMessage);
