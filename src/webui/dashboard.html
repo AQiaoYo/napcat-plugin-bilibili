@@ -70,6 +70,88 @@
                 opacity: 0.5;
             }
         }
+
+        /* 二维码样式 */
+        .qrcode-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .qrcode-img {
+            width: 200px;
+            height: 200px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 8px;
+            background: white;
+        }
+
+        .qrcode-status {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .qrcode-timer {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00a1d6 0%, #0081b3 100%);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 161, 214, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid #00a1d6;
+        }
+
+        .vip-badge {
+            background: linear-gradient(135deg, #fb7299 0%, #ff9a9e 100%);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
     </style>
 </head>
 
@@ -108,6 +190,56 @@
                     <div class="text-sm text-orange-600">总群数</div>
                     <div id="total-groups" class="text-xl font-bold text-orange-700 mt-1 loading">加载中...</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- B站账号登录 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <span>🔐</span> B站账号登录
+                <span class="text-sm font-normal text-gray-400">（登录后可获取更高清视频）</span>
+            </h2>
+
+            <!-- 未登录状态 -->
+            <div id="login-section" class="hidden">
+                <div class="qrcode-container">
+                    <div id="qrcode-placeholder"
+                        class="w-52 h-52 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <button class="btn-primary" onclick="generateQrCode()">
+                            生成登录二维码
+                        </button>
+                    </div>
+                    <div id="qrcode-wrapper" class="hidden">
+                        <img id="qrcode-img" class="qrcode-img" src="" alt="登录二维码">
+                        <div id="qrcode-status" class="qrcode-status text-center">请使用B站APP扫码登录</div>
+                        <div id="qrcode-timer" class="qrcode-timer text-center"></div>
+                        <button id="refresh-qrcode-btn" class="btn-primary mt-4 hidden" onclick="generateQrCode()">
+                            刷新二维码
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 已登录状态 -->
+            <div id="logged-in-section" class="hidden">
+                <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                    <div class="flex items-center gap-4">
+                        <img id="user-avatar" class="user-avatar" src="" alt="头像">
+                        <div>
+                            <div class="flex items-center">
+                                <span id="user-name" class="font-bold text-gray-700"></span>
+                                <span id="user-vip" class="vip-badge hidden">大会员</span>
+                            </div>
+                            <div id="user-uid" class="text-sm text-gray-500"></div>
+                        </div>
+                    </div>
+                    <button class="btn-danger" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+
+            <!-- 加载中状态 -->
+            <div id="login-loading" class="text-center py-8 text-gray-500">
+                <div class="loading">正在检查登录状态...</div>
             </div>
         </div>
 
@@ -224,6 +356,193 @@
         // 群数据缓存
         let groupsData = [];
         let globalEnabled = true;
+
+        // 登录相关状态
+        let qrcodeKey = null;
+        let pollTimer = null;
+        let countdownTimer = null;
+        let remainingTime = 180;
+
+        // 检查登录状态
+        async function checkLoginStatus() {
+            try {
+                const res = await authFetch('/login/status');
+                if (res.code === 0) {
+                    const data = res.data;
+                    document.getElementById('login-loading').classList.add('hidden');
+
+                    if (data.isLoggedIn && data.userInfo) {
+                        showLoggedInUI(data.userInfo);
+                    } else {
+                        showLoginUI();
+                    }
+                }
+            } catch (e) {
+                console.error('检查登录状态失败:', e);
+                document.getElementById('login-loading').innerHTML = '<div class="text-red-500">检查登录状态失败</div>';
+            }
+        }
+
+        // 显示未登录界面
+        function showLoginUI() {
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('logged-in-section').classList.add('hidden');
+        }
+
+        // 显示已登录界面
+        function showLoggedInUI(userInfo) {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('logged-in-section').classList.remove('hidden');
+
+            document.getElementById('user-avatar').src = userInfo.face || '';
+            document.getElementById('user-name').textContent = userInfo.uname || '未知用户';
+            document.getElementById('user-uid').textContent = 'UID: ' + (userInfo.mid || '');
+
+            // 显示大会员标识
+            if (userInfo.vip && userInfo.vip.status === 1) {
+                document.getElementById('user-vip').classList.remove('hidden');
+            } else {
+                document.getElementById('user-vip').classList.add('hidden');
+            }
+        }
+
+        // 生成二维码
+        async function generateQrCode() {
+            try {
+                // 停止之前的轮询
+                stopPolling();
+
+                document.getElementById('qrcode-placeholder').classList.add('hidden');
+                document.getElementById('qrcode-wrapper').classList.remove('hidden');
+                document.getElementById('qrcode-status').textContent = '正在生成二维码...';
+                document.getElementById('refresh-qrcode-btn').classList.add('hidden');
+
+                const res = await authFetch('/login/qrcode/generate', {
+                    method: 'POST'
+                });
+
+                if (res.code === 0 && res.data) {
+                    qrcodeKey = res.data.qrcode_key;
+
+                    // 使用第三方服务生成二维码图片
+                    const qrcodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' +
+                        encodeURIComponent(res.data.url);
+                    document.getElementById('qrcode-img').src = qrcodeUrl;
+                    document.getElementById('qrcode-status').textContent = '请使用B站APP扫码登录';
+
+                    // 开始倒计时
+                    remainingTime = 180;
+                    startCountdown();
+
+                    // 开始轮询
+                    startPolling();
+                } else {
+                    document.getElementById('qrcode-status').textContent = '生成失败: ' + (res.message || '未知错误');
+                    document.getElementById('refresh-qrcode-btn').classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error('生成二维码失败:', e);
+                document.getElementById('qrcode-status').textContent = '生成失败，请重试';
+                document.getElementById('refresh-qrcode-btn').classList.remove('hidden');
+            }
+        }
+
+        // 开始倒计时
+        function startCountdown() {
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            updateCountdown();
+            countdownTimer = setInterval(() => {
+                remainingTime--;
+                updateCountdown();
+
+                if (remainingTime <= 0) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+            }, 1000);
+        }
+
+        // 更新倒计时显示
+        function updateCountdown() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            document.getElementById('qrcode-timer').textContent =
+                `二维码有效期: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // 开始轮询二维码状态
+        function startPolling() {
+            if (pollTimer) clearInterval(pollTimer);
+
+            pollTimer = setInterval(async () => {
+                try {
+                    const res = await authFetch('/login/qrcode/poll?qrcode_key=' + encodeURIComponent(qrcodeKey || ''));
+
+                    if (res.code === 0 && res.data) {
+                        const data = res.data;
+
+                        if (data.isSuccess) {
+                            // 登录成功
+                            stopPolling();
+                            document.getElementById('qrcode-status').textContent = '✅ 登录成功！';
+                            document.getElementById('qrcode-status').className = 'qrcode-status text-center text-green-600 font-bold';
+
+                            // 延迟刷新显示用户信息
+                            setTimeout(() => {
+                                checkLoginStatus();
+                            }, 1000);
+                        } else if (data.isExpired) {
+                            // 二维码过期
+                            stopPolling();
+                            document.getElementById('qrcode-status').textContent = '⏰ 二维码已过期，请刷新';
+                            document.getElementById('refresh-qrcode-btn').classList.remove('hidden');
+                        } else if (data.isScanned) {
+                            // 已扫码
+                            document.getElementById('qrcode-status').textContent = '📱 已扫码，请在手机上确认登录';
+                            document.getElementById('qrcode-status').className = 'qrcode-status text-center text-blue-600';
+                        }
+                    }
+                } catch (e) {
+                    console.error('轮询状态失败:', e);
+                }
+            }, 2000); // 每2秒轮询一次
+        }
+
+        // 停止轮询
+        function stopPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }
+
+        // 退出登录
+        async function logout() {
+            if (!confirm('确定要退出登录吗？')) return;
+
+            try {
+                const res = await authFetch('/login/logout', {
+                    method: 'POST'
+                });
+
+                if (res.code === 0) {
+                    // 重置界面
+                    document.getElementById('qrcode-placeholder').classList.remove('hidden');
+                    document.getElementById('qrcode-wrapper').classList.add('hidden');
+                    showLoginUI();
+                } else {
+                    alert('退出登录失败: ' + (res.message || '未知错误'));
+                }
+            } catch (e) {
+                console.error('退出登录失败:', e);
+                alert('退出登录失败');
+            }
+        }
 
         // 加载状态
         async function loadStatus() {
@@ -378,9 +697,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadStatus();
             loadGroups();
+            checkLoginStatus();
 
             // 定时刷新运行时长
             setInterval(loadStatus, 60000);
+        });
+
+        // 页面离开时停止轮询
+        window.addEventListener('beforeunload', () => {
+            stopPolling();
         });
     </script>
 </body>
