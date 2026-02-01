@@ -21,9 +21,33 @@ import { EventType } from 'napcat-types/napcat-onebot/event/index';
 import { initConfigUI } from './config';
 import { pluginState } from './core/state';
 import { handleMessage } from './handlers/message-handler';
+import {
+    generateQrCode,
+    pollQrCodeStatus,
+    getLoginStatus,
+    clearCredential,
+    getQrSessionStatus,
+} from './services/bilibili-login-service';
+import { QrCodeLoginStatus } from './types';
 
 /** 框架配置 UI Schema，NapCat WebUI 会读取此导出来展示配置面板 */
 export let plugin_config_ui: PluginConfigSchema = [];
+
+/** 获取登录状态文本 */
+function getStatusText(status: QrCodeLoginStatus): string {
+    switch (status) {
+        case QrCodeLoginStatus.WAITING:
+            return '等待扫码';
+        case QrCodeLoginStatus.SCANNED:
+            return '已扫码，请确认';
+        case QrCodeLoginStatus.EXPIRED:
+            return '二维码已过期';
+        case QrCodeLoginStatus.SUCCESS:
+            return '登录成功';
+        default:
+            return '未知状态';
+    }
+}
 
 /** 路由前缀 */
 const ROUTE_PREFIX = '/bilibili';
@@ -149,6 +173,84 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                     } catch (err) {
                         pluginState.log('error', '更新群配置失败:', err);
                         res.status(500).json({ code: -1, message: String(err) });
+                    }
+                });
+
+                // ==================== B 站登录相关接口 ====================
+
+                // 获取登录状态
+                base.get(wrapPath('/login/status'), async (_req: any, res: any) => {
+                    try {
+                        const status = await getLoginStatus();
+                        res.json({ code: 0, data: status });
+                    } catch (e) {
+                        pluginState.log('error', '获取登录状态失败:', e);
+                        res.status(500).json({ code: -1, message: String(e) });
+                    }
+                });
+
+                // 生成登录二维码
+                base.post && base.post(wrapPath('/login/qrcode/generate'), async (_req: any, res: any) => {
+                    try {
+                        const result = await generateQrCode();
+                        if (result) {
+                            res.json({
+                                code: 0,
+                                data: {
+                                    url: result.url,
+                                    qrcode_key: result.qrcode_key,
+                                }
+                            });
+                        } else {
+                            res.status(500).json({ code: -1, message: '生成二维码失败' });
+                        }
+                    } catch (e) {
+                        pluginState.log('error', '生成二维码失败:', e);
+                        res.status(500).json({ code: -1, message: String(e) });
+                    }
+                });
+
+                // 轮询二维码状态
+                base.get(wrapPath('/login/qrcode/poll'), async (req: any, res: any) => {
+                    try {
+                        const qrcode_key = req.query?.qrcode_key as string | undefined;
+                        const result = await pollQrCodeStatus(qrcode_key);
+
+                        res.json({
+                            code: 0,
+                            data: {
+                                status: result.status,
+                                statusText: getStatusText(result.status),
+                                message: result.message,
+                                isSuccess: result.status === QrCodeLoginStatus.SUCCESS,
+                                isExpired: result.status === QrCodeLoginStatus.EXPIRED,
+                                isScanned: result.status === QrCodeLoginStatus.SCANNED,
+                            }
+                        });
+                    } catch (e) {
+                        pluginState.log('error', '轮询二维码状态失败:', e);
+                        res.status(500).json({ code: -1, message: String(e) });
+                    }
+                });
+
+                // 获取二维码会话状态
+                base.get(wrapPath('/login/qrcode/session'), async (_req: any, res: any) => {
+                    try {
+                        const session = getQrSessionStatus();
+                        res.json({ code: 0, data: session });
+                    } catch (e) {
+                        res.status(500).json({ code: -1, message: String(e) });
+                    }
+                });
+
+                // 退出登录
+                base.post && base.post(wrapPath('/login/logout'), async (_req: any, res: any) => {
+                    try {
+                        await clearCredential();
+                        res.json({ code: 0, message: '已退出登录' });
+                    } catch (e) {
+                        pluginState.log('error', '退出登录失败:', e);
+                        res.status(500).json({ code: -1, message: String(e) });
                     }
                 });
 
