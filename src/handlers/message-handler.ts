@@ -12,6 +12,7 @@ import {
     parseAndFetchVideoInfo,
     parseAndFetchVideoWithDownload,
     buildVideoMessage,
+    buildVideoInfoMessages,
     downloadVideo,
     cleanupTempVideo
 } from '../services/bilibili-service';
@@ -38,6 +39,59 @@ async function sendGroupMessage(ctx: NapCatPluginContext, groupId: number | stri
         pluginState.log('error', `发送群消息失败:`, error);
         return false;
     }
+}
+
+/**
+ * 合并转发消息节点类型
+ */
+interface ForwardNode {
+    type: 'node';
+    data: {
+        user_id: string;
+        nickname: string;
+        content: Array<{ type: string; data: any }>;
+    };
+}
+
+/**
+ * 发送群合并转发消息
+ * @param ctx 插件上下文
+ * @param groupId 群号
+ * @param messages 合并转发消息节点数组
+ */
+async function sendGroupForwardMsg(ctx: NapCatPluginContext, groupId: number | string, messages: ForwardNode[]): Promise<boolean> {
+    try {
+        await ctx.actions.call(
+            'send_group_forward_msg',
+            {
+                group_id: String(groupId),
+                messages: messages
+            },
+            ctx.adapterName,
+            ctx.pluginManager.config
+        );
+        return true;
+    } catch (error) {
+        pluginState.log('error', `发送群合并转发消息失败:`, error);
+        return false;
+    }
+}
+
+/**
+ * 构建伪造的合并转发消息节点
+ * @param userId 发送者 QQ 号
+ * @param nickname 发送者昵称
+ * @param content 消息内容数组
+ */
+function buildForwardNode(userId: string, nickname: string, content: Array<{ type: string; data: any }>): ForwardNode {
+    return {
+        type: 'node',
+        data: {
+            user_id: userId,
+            nickname: nickname,
+            content: content
+        }
+    };
 }
 
 /**
@@ -153,28 +207,42 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
             messageContent = buildVideoMessage(videoInfo);
         }
 
-        // 第一步：发送信息卡片到群
-        const success = await sendGroupMessage(ctx, groupId, messageContent);
-        if (success) {
-            pluginState.log('info', `视频信息卡片已发送到群 ${groupId}`);
+        // 获取 Bot 信息用于伪造消息
+        // 从事件中获取 self_id（Bot 的 QQ 号）
+        const botUserId = String(event.self_id || '10000');
+        const botNickname = 'Bilibili 解析';
+
+        // 构建合并转发消息节点
+        const forwardNodes: ForwardNode[] = [];
+
+        // 获取分离的消息内容（封面、信息、视频分别作为不同节点）
+        const separatedMessages = buildVideoInfoMessages(messageContent);
+
+        // 节点1：封面图片（如果有）
+        if (separatedMessages.cover) {
+            forwardNodes.push(buildForwardNode(botUserId, botNickname, [separatedMessages.cover]));
         }
 
-        // 第二步：单独发送视频（如果有）
-        if (videoFilePath && !useGroupFile) {
-            // 等待一小段时间，避免消息发送过快
-            await new Promise(resolve => setTimeout(resolve, 500));
+        // 节点2：视频信息文本
+        if (separatedMessages.info) {
+            forwardNodes.push(buildForwardNode(botUserId, botNickname, [separatedMessages.info]));
+        }
 
-            const videoMessage = [{
+        // 节点3：视频文件（如果有，且不需要群文件方式发送）
+        if (videoFilePath && !useGroupFile) {
+            forwardNodes.push(buildForwardNode(botUserId, botNickname, [{
                 type: 'video',
                 data: { file: videoFilePath }
-            }];
-            const videoSuccess = await sendGroupMessage(ctx, groupId, videoMessage);
-            if (videoSuccess) {
-                pluginState.log('info', `视频已单独发送到群 ${groupId}`);
-            }
+            }]));
         }
 
-        // 第三步：如果使用群文件方式，上传视频到群文件
+        // 发送合并转发消息
+        const success = await sendGroupForwardMsg(ctx, groupId, forwardNodes);
+        if (success) {
+            pluginState.log('info', `视频信息已通过合并转发发送到群 ${groupId}`);
+        }
+
+        // 如果使用群文件方式，上传视频到群文件
         if (useGroupFile && videoFilePath) {
             const fileName = `bilibili_${Date.now()}.mp4`;
             const uploadSuccess = await uploadGroupFile(ctx, groupId, videoFilePath, fileName);
