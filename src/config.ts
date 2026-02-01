@@ -11,6 +11,7 @@ export const DEFAULT_CONFIG: PluginConfig = {
     enabled: true,
     sendMode: 'with-video',
     maxVideoSizeMB: 100,
+    parseCacheTTL: 300, // 默认 5 分钟
     groupConfigs: {}
 };
 
@@ -35,7 +36,9 @@ export function initConfigUI(ctx: NapCatPluginContext) {
             { label: '发送信息卡片 + 视频', value: 'with-video' }
         ], DEFAULT_CONFIG.sendMode, '选择发送视频信息还是同时发送视频文件', true),
         // 最大视频大小
-        ctx.NapCatConfig.number('maxVideoSizeMB', '最大视频大小 (MB)', DEFAULT_CONFIG.maxVideoSizeMB, '超过此大小的视频将不会下载，仅发送信息卡片', true)
+        ctx.NapCatConfig.number('maxVideoSizeMB', '最大视频大小 (MB)', DEFAULT_CONFIG.maxVideoSizeMB, '超过此大小的视频将不会下载，仅发送信息卡片', true),
+        // 解析缓存过期时间
+        ctx.NapCatConfig.number('parseCacheTTL', '解析去重时间 (秒)', DEFAULT_CONFIG.parseCacheTTL, '同一群内相同链接在此时间内不会重复解析，设为 0 禁用去重', true)
     );
 
     return schema;

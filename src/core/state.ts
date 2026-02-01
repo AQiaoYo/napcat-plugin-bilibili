@@ -46,6 +46,12 @@ function sanitizeConfig(raw: unknown): PluginConfig {
         out.maxVideoSizeMB = rawMaxSize;
     }
 
+    // parseCacheTTL
+    const rawCacheTTL = (raw as Record<string, unknown>)['parseCacheTTL'];
+    if (typeof rawCacheTTL === 'number' && rawCacheTTL >= 0) {
+        out.parseCacheTTL = rawCacheTTL;
+    }
+
     // credential (B站登录凭据) - 读取时解密
     const rawCredential = (raw as Record<string, unknown>)['credential'];
     if (isObject(rawCredential)) {
@@ -124,6 +130,8 @@ class PluginState {
             todayParsed: 0,
             lastUpdateDay: new Date().toDateString()
         };
+    /** 解析缓存，用于防止重复解析 (key: "groupId:bvid", value: 过期时间戳) */
+    private parseCache: Map<string, number> = new Map();
 
     /**
      * 通用日志方法
@@ -316,6 +324,66 @@ class PluginState {
         const groupConfigs = { ...(this.config.groupConfigs || {}) };
         groupConfigs[groupId] = { ...groupConfigs[groupId], ...partialCfg };
         this.setConfig(ctx, { groupConfigs });
+    }
+
+    /**
+     * 检查是否在缓存中（防止重复解析）
+     * @param groupId 群号
+     * @param bvid BV 号
+     * @returns 是否在缓存中（未过期）
+     */
+    isInParseCache(groupId: string, bvid: string): boolean {
+        const key = `${groupId}:${bvid}`;
+        const expireTime = this.parseCache.get(key);
+        if (!expireTime) return false;
+
+        // 检查是否过期
+        if (Date.now() > expireTime) {
+            this.parseCache.delete(key);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 添加到解析缓存
+     * @param groupId 群号
+     * @param bvid BV 号
+     */
+    addToParseCache(groupId: string, bvid: string): void {
+        const key = `${groupId}:${bvid}`;
+        const ttl = (this.config.parseCacheTTL || 300) * 1000; // 转换为毫秒
+        this.parseCache.set(key, Date.now() + ttl);
+        this.logDebug(`添加解析缓存: ${key}, TTL: ${ttl / 1000}秒`);
+
+        // 定期清理过期缓存（每 100 条清理一次）
+        if (this.parseCache.size > 100) {
+            this.cleanExpiredCache();
+        }
+    }
+
+    /**
+     * 清理过期缓存
+     */
+    private cleanExpiredCache(): void {
+        const now = Date.now();
+        let cleaned = 0;
+        for (const [key, expireTime] of this.parseCache.entries()) {
+            if (now > expireTime) {
+                this.parseCache.delete(key);
+                cleaned++;
+            }
+        }
+        if (cleaned > 0) {
+            this.logDebug(`清理过期缓存: ${cleaned} 条`);
+        }
+    }
+
+    /**
+     * 获取缓存大小
+     */
+    getParseCacheSize(): number {
+        return this.parseCache.size;
     }
 }
 

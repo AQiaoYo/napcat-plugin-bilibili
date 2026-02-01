@@ -164,6 +164,46 @@ export function extractShortLink(text: string): string | null {
 }
 
 /**
+ * 从消息中提取视频 ID（统一返回 BV 号）
+ * 用于去重检查，支持 BV 号、AV 号、完整链接和短链接
+ * @param text 消息文本
+ * @returns BV 号或 AV 号字符串（用于缓存 key）
+ */
+export async function extractVideoId(text: string): Promise<string | null> {
+    // 1. 先尝试提取 BV 号
+    let bvid = extractBvid(text);
+    if (bvid) {
+        return bvid;
+    }
+
+    // 2. 尝试提取 AV 号
+    const aid = extractAvid(text);
+    if (aid) {
+        return `av${aid}`;
+    }
+
+    // 3. 尝试提取并解析短链接
+    const shortLink = extractShortLink(text);
+    if (shortLink) {
+        const realUrl = await resolveShortUrl(shortLink);
+        if (realUrl) {
+            // 从真实 URL 中提取 BV 号
+            bvid = extractBvid(realUrl);
+            if (bvid) {
+                return bvid;
+            }
+            // 尝试提取 AV 号
+            const aidFromUrl = extractAvid(realUrl);
+            if (aidFromUrl) {
+                return `av${aidFromUrl}`;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
  * 解析短链接获取真实 URL
  * @param shortUrl 短链接
  * @returns 真实 URL 或 null
