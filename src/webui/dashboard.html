@@ -173,14 +173,49 @@
         // 获取 webui_token
         const token = new URLSearchParams(window.location.search).get('webui_token') || '';
 
+        // 获取认证头
+        function authHeaders(h = {}) {
+            if (token) h['Authorization'] = 'Bearer ' + token;
+            return h;
+        }
+
+        // 解析 API 基础路径
+        async function resolveApiBase() {
+            const tries = [];
+            // 尝试从全局变量获取插件名
+            if (window.__PLUGIN_NAME__) tries.push(window.__PLUGIN_NAME__);
+            try {
+                if (window.parent && window.parent.__PLUGIN_NAME__) tries.push(window.parent.__PLUGIN_NAME__);
+            } catch (e) { }
+            // 从 URL 路径推断
+            const segs = location.pathname.split('/').filter(Boolean);
+            if (segs.length) tries.push(segs[segs.length - 1]);
+            // 默认插件名
+            tries.push('napcat-plugin-bilibili');
+
+            for (const name of [...new Set(tries)]) {
+                const base = '/api/Plugin/ext/' + name;
+                try {
+                    const r = await fetch(base + ROUTE_PREFIX + '/status', { headers: authHeaders() });
+                    if (r.ok) return base;
+                } catch (e) { }
+            }
+            return '/api/Plugin/ext/' + (window.__PLUGIN_NAME__ || 'napcat-plugin-bilibili');
+        }
+
+        // API 基础路径 Promise
+        let API_BASE_P = resolveApiBase();
+
         // 带鉴权的 fetch
         async function authFetch(path, options = {}) {
-            const url = `${ROUTE_PREFIX}${path}?webui_token=${token}`;
-            const res = await fetch(url, {
+            const base = await API_BASE_P;
+            const fullPath = base + ROUTE_PREFIX + path;
+            const res = await fetch(fullPath, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
-                    ...options.headers
+                    ...options.headers,
+                    ...authHeaders()
                 }
             });
             return res.json();
