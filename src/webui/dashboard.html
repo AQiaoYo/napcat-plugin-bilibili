@@ -224,7 +224,8 @@
             <div id="logged-in-section" class="hidden">
                 <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
                     <div class="flex items-center gap-4">
-                        <img id="user-avatar" class="user-avatar" src="" alt="头像">
+                        <img id="user-avatar" class="user-avatar" src="" alt="头像" referrerpolicy="no-referrer"
+                            crossorigin="anonymous">
                         <div>
                             <div class="flex items-center">
                                 <span id="user-name" class="font-bold text-gray-700"></span>
@@ -319,9 +320,14 @@
             try {
                 if (window.parent && window.parent.__PLUGIN_NAME__) tries.push(window.parent.__PLUGIN_NAME__);
             } catch (e) { }
-            // 从 URL 路径推断
-            const segs = location.pathname.split('/').filter(Boolean);
-            if (segs.length) tries.push(segs[segs.length - 1]);
+
+            // 从 URL 路径推断 - 查找 /ext/ 后面的部分
+            const pathname = location.pathname;
+            const extMatch = pathname.match(/\/ext\/([^\/]+)/);
+            if (extMatch && extMatch[1]) {
+                tries.push(extMatch[1]);
+            }
+
             // 默认插件名
             tries.push('napcat-plugin-bilibili');
 
@@ -342,6 +348,7 @@
         async function authFetch(path, options = {}) {
             const base = await API_BASE_P;
             const fullPath = base + ROUTE_PREFIX + path;
+            console.log('[Bilibili] API 请求:', fullPath);
             const res = await fetch(fullPath, {
                 ...options,
                 headers: {
@@ -366,7 +373,10 @@
         // 检查登录状态
         async function checkLoginStatus() {
             try {
+                console.log('[Bilibili] 检查登录状态...');
                 const res = await authFetch('/login/status');
+                console.log('[Bilibili] 登录状态响应:', res);
+
                 if (res.code === 0) {
                     const data = res.data;
                     document.getElementById('login-loading').classList.add('hidden');
@@ -376,10 +386,16 @@
                     } else {
                         showLoginUI();
                     }
+                } else {
+                    // 如果返回的不是我们的 API 格式，显示未登录
+                    console.warn('[Bilibili] API 返回格式不正确:', res);
+                    document.getElementById('login-loading').classList.add('hidden');
+                    showLoginUI();
                 }
             } catch (e) {
                 console.error('检查登录状态失败:', e);
-                document.getElementById('login-loading').innerHTML = '<div class="text-red-500">检查登录状态失败</div>';
+                document.getElementById('login-loading').classList.add('hidden');
+                showLoginUI();
             }
         }
 
@@ -394,7 +410,18 @@
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('logged-in-section').classList.remove('hidden');
 
-            document.getElementById('user-avatar').src = userInfo.face || '';
+            // 处理头像 - B 站头像可能有防盗链，使用备用方案
+            const avatarEl = document.getElementById('user-avatar');
+            if (userInfo.face) {
+                avatarEl.src = userInfo.face;
+                avatarEl.onerror = function () {
+                    // 头像加载失败，使用默认头像
+                    this.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%2300a1d6" width="100" height="100"/><text x="50" y="60" font-size="40" fill="white" text-anchor="middle">👤</text></svg>');
+                };
+            } else {
+                avatarEl.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%2300a1d6" width="100" height="100"/><text x="50" y="60" font-size="40" fill="white" text-anchor="middle">👤</text></svg>');
+            }
+
             document.getElementById('user-name').textContent = userInfo.uname || '未知用户';
             document.getElementById('user-uid').textContent = 'UID: ' + (userInfo.mid || '');
 
