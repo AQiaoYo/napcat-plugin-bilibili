@@ -1,6 +1,6 @@
 /**
  * 类型定义文件
- * 定义插件所有的接口和类型
+ * 定义 B 站视频解析插件所有的接口和类型
  */
 
 import type { PluginConfigSchema, PluginConfigUIController } from 'napcat-types/napcat-onebot/network/plugin-manger';
@@ -9,92 +9,73 @@ import type { PluginConfigSchema, PluginConfigUIController } from 'napcat-types/
  * 插件主配置接口
  */
 export interface PluginConfig {
-    /** 全局开关：是否启用自动清理功能 */
+    /** 全局开关：是否启用 B 站链接解析功能 */
     enabled: boolean;
-    /** 全局 cron 表达式，默认每天早上8点 */
-    globalCron?: string;
-    /** 默认不活跃天数（多少天未发言视为不活跃） */
-    inactiveDays?: number;
-    /** 试运行模式，只统计不实际踢人 */
-    dryRun?: boolean;
     /** 按群的单独配置 */
-    groupConfigs?: Record<string, GroupCronConfig>;
-    /** 清理统计数据 */
-    cleanupStats?: CleanupStats;
+    groupConfigs?: Record<string, GroupBilibiliConfig>;
 }
 
 /**
- * 群定时任务配置
+ * 群 B 站解析配置
  */
-export interface GroupCronConfig {
-    /** 是否启用此群的定时清理 */
+export interface GroupBilibiliConfig {
+    /** 是否启用此群的 B 站链接解析 */
     enabled?: boolean;
-    /** cron 表达式，为空则使用全局配置 */
-    cron?: string;
-    /** 判定为不活跃的天数，为空则使用全局配置 */
-    inactiveDays?: number;
-    /** 受保护的成员 QQ 号列表（白名单，不会被踢） */
-    protectedMembers?: string[];
-    /** 试运行模式，为空则使用全局配置 */
-    dryRun?: boolean;
-    /** 上次清理时间戳 */
-    lastCleanup?: number;
-    /** 上次清理人数 */
-    lastCleanupCount?: number;
 }
 
 /**
- * 清理结果
+ * B 站视频信息
  */
-export interface CleanupResult {
-    groupId: string;
-    groupName: string;
-    totalMembers: number;
-    inactiveMembers: number;
-    kickedMembers: number;
-    kickedList: KickedMember[];
-    failedList: FailedKick[];
-    dryRun: boolean;
-    timestamp: number;
+export interface BilibiliVideoInfo {
+    /** BV 号 */
+    bvid: string;
+    /** AV 号 */
+    aid: number;
+    /** 视频标题 */
+    title: string;
+    /** 视频封面 URL */
+    pic: string;
+    /** 视频简介 */
+    desc: string;
+    /** 视频时长（秒） */
+    duration: number;
+    /** UP 主信息 */
+    owner: {
+        mid: number;
+        name: string;
+        face: string;
+    };
+    /** 视频统计数据 */
+    stat: {
+        /** 播放量 */
+        view: number;
+        /** 弹幕数 */
+        danmaku: number;
+        /** 评论数 */
+        reply: number;
+        /** 收藏数 */
+        favorite: number;
+        /** 投币数 */
+        coin: number;
+        /** 分享数 */
+        share: number;
+        /** 点赞数 */
+        like: number;
+    };
+    /** 发布时间戳 */
+    pubdate: number;
+    /** 分区名称 */
+    tname: string;
 }
 
 /**
- * 被踢出的成员信息
+ * B 站 API 响应结构
  */
-export interface KickedMember {
-    userId: string;
-    nickname: string;
-    lastSpeakTime: number;
-    inactiveDays: number;
-}
-
-/**
- * 踢人失败记录
- */
-export interface FailedKick {
-    userId: string;
-    nickname: string;
-    reason: string;
-}
-
-/**
- * 清理统计汇总
- */
-export interface CleanupStats {
-    totalCleanups: number;
-    totalKicked: number;
-    lastCleanupTime?: number;
-    groupStats?: Record<string, GroupCleanupStats>;
-}
-
-/**
- * 群清理统计
- */
-export interface GroupCleanupStats {
-    totalCleanups: number;
-    totalKicked: number;
-    lastCleanupTime?: number;
-    lastCleanupCount?: number;
+export interface BilibiliApiResponse<T = any> {
+    code: number;
+    message: string;
+    ttl?: number;
+    data: T;
 }
 
 /** 框架配置 UI Schema 变量，NapCat WebUI 会读取此导出 */
