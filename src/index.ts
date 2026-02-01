@@ -1,10 +1,11 @@
 /**
- * NapCat 自动清理不活跃群成员插件
+ * NapCat B站视频链接解析插件
  * 
  * 功能：
- * - 定时扫描群成员活跃度
- * - 自动清理长期不活跃的"鱼干"成员
- * - 提供 WebUI 仪表盘查看状态和配置
+ * - 自动解析群消息中的 B 站视频链接
+ * - 发送视频信息卡片（封面、标题、UP主、播放量等）
+ * - 支持 BV号、AV号、短链接等多种格式
+ * - WebUI 支持按群开关
  * 
  * @author AQiaoYo
  * @license MIT
@@ -20,18 +21,16 @@ import { EventType } from 'napcat-types/napcat-onebot/event/index';
 import { initConfigUI } from './config';
 import { pluginState } from './core/state';
 import { handleMessage } from './handlers/message-handler';
-import { getGroupsWithPermissions } from './services/group-service';
-import { runCleanupAndNotify, runCleanupForGroup, getLastCleanupResult, getCleanupStats } from './services/cleanup-service';
 
 /** 框架配置 UI Schema，NapCat WebUI 会读取此导出来展示配置面板 */
 export let plugin_config_ui: PluginConfigSchema = [];
 
-/** 路由前缀（请在新插件中修改为合适前缀） */
-const ROUTE_PREFIX = '/plugin-template';
+/** 路由前缀 */
+const ROUTE_PREFIX = '/bilibili';
 
 /**
  * 插件初始化函数
- * 负责加载配置、注册 WebUI 路由、启动定时任务
+ * 负责加载配置、注册 WebUI 路由
  */
 const plugin_init = async (ctx: NapCatPluginContext) => {
     try {
@@ -39,7 +38,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
         pluginState.loadConfig(ctx);
         pluginState.log('info', `初始化完成 | name=${ctx.pluginName}`);
 
-        // 生成配置 schema 并导出（config.ts 中实现）
+        // 生成配置 schema 并导出
         try {
             const schema = initConfigUI(ctx);
             plugin_config_ui = schema || [];
@@ -47,7 +46,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
             pluginState.logDebug('initConfigUI 未实现或抛出错误，已跳过');
         }
 
-        // 注册最小化的 WebUI 路由（保留静态和基础接口，便于后续扩展）
+        // 注册 WebUI 路由
         try {
             const base = (ctx as any).router;
             const wrapPath = (p: string) => {
@@ -55,7 +54,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 return p.startsWith('/') ? `${ROUTE_PREFIX}${p}` : `${ROUTE_PREFIX}/${p}`;
             };
 
-            // 静态资源目录（映射到 src/webui）
+            // 静态资源目录
             if (base && base.static) base.static(wrapPath('/static'), 'webui');
 
             // 插件信息脚本
@@ -77,31 +76,93 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 // 状态接口
                 base.get(wrapPath('/status'), (_req: any, res: any) => {
                     const uptime = pluginState.getUptime();
-                    res.json({ code: 0, data: { pluginName: pluginState.pluginName, uptime, config: pluginState.getConfig() } });
+                    res.json({
+                        code: 0,
+                        data: {
+                            pluginName: pluginState.pluginName,
+                            uptime,
+                            uptimeFormatted: pluginState.getUptimeFormatted(),
+                            config: pluginState.getConfig()
+                        }
+                    });
                 });
 
-                // 配置接口
+                // 配置读取接口
                 base.get(wrapPath('/config'), (_req: any, res: any) => {
                     res.json({ code: 0, data: pluginState.getConfig() });
                 });
 
+                // 配置保存接口
                 base.post && base.post(wrapPath('/config'), async (req: any, res: any) => {
                     try {
                         const newCfg = req.body || {};
                         pluginState.setConfig(ctx, newCfg as any);
-                        pluginState.log('info', '配置已保存（通过最小化 API）');
+                        pluginState.log('info', '配置已保存');
                         res.json({ code: 0, message: 'ok' });
                     } catch (err) {
                         pluginState.log('error', '保存配置失败:', err);
                         res.status(500).json({ code: -1, message: String(err) });
                     }
                 });
+
+                // 群列表接口
+                base.get(wrapPath('/groups'), async (_req: any, res: any) => {
+                    try {
+                        const result = await pluginState.callApi('get_group_list', {});
+                        const groups = result?.data || result || [];
+                        const config = pluginState.getConfig();
+
+                        // 为每个群添加配置信息
+                        const groupsWithConfig = groups.map((group: any) => {
+                            const groupId = String(group.group_id);
+                            const groupConfig = config.groupConfigs?.[groupId] || {};
+                            return {
+                                ...group,
+                                biliEnabled: groupConfig.enabled !== false // 默认启用
+                            };
+                        });
+
+                        res.json({ code: 0, data: groupsWithConfig });
+                    } catch (e) {
+                        pluginState.log('error', '获取群列表失败:', e);
+                        res.status(500).json({ code: -1, message: String(e) });
+                    }
+                });
+
+                // 更新群配置接口
+                base.post && base.post(wrapPath('/groups/:id/config'), async (req: any, res: any) => {
+                    try {
+                        const groupId = String(req.params?.id || '');
+                        if (!groupId) {
+                            return res.status(400).json({ code: -1, message: '缺少群 ID' });
+                        }
+
+                        const { enabled } = req.body || {};
+                        pluginState.updateGroupConfig(ctx, groupId, { enabled: Boolean(enabled) });
+                        pluginState.log('info', `群 ${groupId} 配置已更新: enabled=${enabled}`);
+                        res.json({ code: 0, message: 'ok' });
+                    } catch (err) {
+                        pluginState.log('error', '更新群配置失败:', err);
+                        res.status(500).json({ code: -1, message: String(err) });
+                    }
+                });
+
+                // 注册仪表盘页面
+                if (base.page) {
+                    base.page({
+                        path: 'bilibili-dashboard',
+                        title: 'B站解析仪表盘',
+                        icon: '📺',
+                        htmlFile: 'webui/dashboard.html',
+                        description: '管理 B 站视频链接解析功能'
+                    });
+                }
             }
         } catch (e) {
-            pluginState.log('warn', '注册基础 WebUI 路由失败（环境可能不完全支持 Router API）', e);
+            pluginState.log('warn', '注册 WebUI 路由失败', e);
         }
 
-        pluginState.log('info', '插件初始化完成（模板）');
+        pluginState.log('info', '插件初始化完成');
     } catch (error) {
         pluginState.log('error', '插件初始化失败:', error);
     }
@@ -109,7 +170,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
 
 /**
  * 消息处理函数
- * 当收到群消息时触发，用于未来扩展（如管理员命令）
+ * 当收到群消息时触发，检测并解析 B 站链接
  */
 const plugin_onmessage = async (ctx: NapCatPluginContext, event: OB11Message) => {
     if (!pluginState.config.enabled) return;
@@ -119,14 +180,12 @@ const plugin_onmessage = async (ctx: NapCatPluginContext, event: OB11Message) =>
 
 /**
  * 插件卸载函数
- * 负责清理资源、停止定时任务
  */
 const plugin_cleanup = async (ctx: NapCatPluginContext) => {
     try {
-        // Cron / 定时任务功能已移除或为后端可选实现，若需要在卸载时执行清理逻辑，请在此处添加。
         pluginState.log('info', '插件已卸载');
     } catch (e) {
-        pluginState.log('warn', '停止定时任务时出错:', e);
+        pluginState.log('warn', '插件卸载时出错:', e);
     }
 };
 
@@ -143,7 +202,7 @@ export const plugin_set_config = async (ctx: NapCatPluginContext, config: any) =
 
 /**
  * 配置变更回调
- * 当 WebUI 中修改配置时触发，自动保存并重载定时任务
+ * 当 WebUI 中修改配置时触发
  */
 export const plugin_on_config_change = async (
     ctx: NapCatPluginContext,
@@ -158,8 +217,6 @@ export const plugin_on_config_change = async (
     } catch (err) {
         pluginState.log('error', `更新配置项 ${key} 失败:`, err);
     }
-
-    // Cron 功能在模板中已移除；如果需要在配置变更时触发其他操作，可在这里实现。
 };
 
 export {
