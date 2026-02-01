@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -17,7 +18,8 @@
                             blue: '#00A1D6',
                             dark: '#18191C',
                             gray: '#F4F4F4',
-                        }
+                        },
+                        primary: '#FB7299',
                     }
                 }
             }
@@ -25,7 +27,8 @@
     </script>
     <style>
         * { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; overflow: hidden; background: #f0f2f5; color: #1f2937; font-size: 16px; }
+        html, body { height: 100%; margin: 0; overflow: hidden; background: #f0f2f5; color: #1f2937; font-size: 16px; transition: background 0.3s, color 0.3s; }
+        html.dark, html.dark body { background: #18191C; color: #e5e7eb; }
         
         .app-layout {
             display: grid;
@@ -49,6 +52,12 @@
             border: 1px solid #e5e7eb;
             display: flex;
             flex-direction: column;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .dark .glass-card {
+            background: #2a2b2e;
+            border-color: #3f4045;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
 
         /* 侧边栏垂直布局 */
@@ -64,6 +73,7 @@
         /* 滚动条美化 */
         .sidebar::-webkit-scrollbar, .scroll-area::-webkit-scrollbar { width: 4px; }
         .sidebar::-webkit-scrollbar-thumb, .scroll-area::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .dark .sidebar::-webkit-scrollbar-thumb, .dark .scroll-area::-webkit-scrollbar-thumb { background: #4a4b50; }
 
         .account-mini { padding: 16px; }
 
@@ -72,6 +82,7 @@
             padding: 0 24px;
             border-right: 1px solid #e5e7eb;
         }
+        .dark .top-stat-item { border-color: #3f4045; }
         .top-stat-item:last-child { border-right: none; }
 
         /* 群列表容器 */
@@ -92,6 +103,7 @@
             transition: 0.3s;
             border-radius: 24px;
         }
+        .dark .toggle-slider { background-color: #4a4b50; }
         .toggle-slider:before {
             position: absolute;
             content: "";
@@ -103,7 +115,7 @@
             transition: 0.3s;
             border-radius: 50%;
         }
-        input:checked + .toggle-slider { background-color: #00A1D6; }
+        input:checked + .toggle-slider { background-color: #FB7299; }
         input:checked + .toggle-slider:before { transform: translateX(24px); }
 
         /* Toast */
@@ -120,7 +132,11 @@
             transition: all 0.2s;
             background: #fff;
         }
-        .group-item:hover { border-color: #00A1D6; box-shadow: 0 2px 8px rgba(0,161,214,0.1); }
+        .dark .group-item {
+            background: #2a2b2e;
+            border-color: #3f4045;
+        }
+        .group-item:hover { border-color: #FB7299; box-shadow: 0 2px 8px rgba(251,114,153,0.15); }
     </style>
 </head>
 
@@ -129,7 +145,7 @@
 
     <div class="app-layout">
         <!-- 顶部通栏 -->
-        <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shadow-sm z-10">
+        <header class="bg-white dark:bg-bili-dark border-b border-gray-200 dark:border-gray-700 px-8 py-4 flex items-center justify-between shadow-sm z-10 transition-colors">
             <div class="flex items-center gap-4">
                 <svg class="w-8 h-8" viewBox="0 0 1071 1024" xmlns="http://www.w3.org/2000/svg">
                     <path d="M887.365188 952.783894H184.455499C82.758914 952.783894 0 876.72402 0 783.272408V336.111466c0-93.477378 82.758914-169.537251 184.455499-169.537252h704.043373c51.969094 0 101.67082 20.225949 136.377002 55.498973A159.256801 159.256801 0 0 1 1071.846453 336.420652V783.272408c0 93.451613-82.758914 169.511486-184.481265 169.511486zM184.455499 251.600495c-54.829069 0-99.429218 37.901109-99.429218 84.510971V783.272408c0 46.609861 44.600149 84.51097 99.429218 84.51097H887.365188c54.829069 0 99.429218-37.901109 99.429218-84.51097V335.415796a74.539706 74.539706 0 0 0-22.570613-53.72115c-18.808844-19.11803-46.377972-30.09415-75.750687-30.094151z" fill="#FB7299"/>
@@ -138,10 +154,10 @@
                     <path d="M577.629382 262.330313m-26.538343-29.671098l0 0q-26.538343-29.671097 3.132755-56.20944l185.900468-166.272595q29.671097-26.538343 56.209441 3.132755l0 0q26.538343 29.671097-3.132755 56.20944l-185.900468 166.272595q-29.671097 26.538343-56.209441-3.132755Z" fill="#FB7299"/>
                     <path d="M595.621982 756.373184a39.447041 39.447041 0 0 1-30.738289-14.686357L533.346672 702.677799l-32.438814 38.467951a39.730462 39.730462 0 0 1-55.473207 5.153108l-44.316729-36.535535a23.188986 23.188986 0 1 1 29.501543-35.762569l39.163621 32.258455 33.495202-39.601634a39.6274 39.6274 0 0 1 61.038563 0.566842l32.722236 40.323069 45.424646-33.933215A23.188986 23.188986 0 1 1 669.904033 710.665117l-50.655051 37.798047a39.369745 39.369745 0 0 1-23.627 7.91002z" fill="#FB7299"/>
                 </svg>
-                <h1 class="text-xl font-bold text-gray-800 tracking-tight">B站视频解析 · 控制中心</h1>
-                <span id="status-badge" class="ml-2 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600 border border-green-200">运行中</span>
-                <button class="ml-2 p-2 hover:bg-gray-100 rounded-full transition-colors group" title="刷新数据" onclick="refreshAll()">
-                    <svg class="w-5 h-5 text-gray-500 group-hover:text-bili-blue transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">B站视频解析 · 控制中心</h1>
+                <span id="status-badge" class="ml-2 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">运行中</span>
+                <button class="ml-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors group" title="刷新数据" onclick="refreshAll()">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-bili-pink transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
                         <path d="M21 3v5h-5"/>
                     </svg>
@@ -150,20 +166,20 @@
 
             <div class="flex items-center h-10">
                 <div class="top-stat-item flex flex-col items-center">
-                    <span class="text-xs text-gray-400 mb-1">今日解析</span>
-                    <span id="stats-today" class="text-lg font-bold text-blue-600">0</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">今日解析</span>
+                    <span id="stats-today" class="text-lg font-bold text-bili-pink">0</span>
                 </div>
                 <div class="top-stat-item flex flex-col items-center">
-                    <span class="text-xs text-gray-400 mb-1">累计解析</span>
-                    <span id="stats-total" class="text-lg font-bold text-blue-600">0</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">累计解析</span>
+                    <span id="stats-total" class="text-lg font-bold text-bili-pink">0</span>
                 </div>
                 <div class="top-stat-item flex flex-col items-center">
-                    <span class="text-xs text-gray-400 mb-1">活跃群聊</span>
-                    <span id="enabled-groups" class="text-lg font-bold text-pink-500">0</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">活跃群聊</span>
+                    <span id="enabled-groups" class="text-lg font-bold text-bili-pink">0</span>
                 </div>
                 <div class="top-stat-item flex flex-col items-center border-none">
-                    <span class="text-xs text-gray-400 mb-1">运行时长</span>
-                    <span id="uptime" class="text-lg font-bold text-gray-700 min-w-[5em] text-center" style="font-variant-numeric: tabular-nums;">--</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">运行时长</span>
+                    <span id="uptime" class="text-lg font-bold text-gray-700 dark:text-gray-300 min-w-[5em] text-center" style="font-variant-numeric: tabular-nums;">--</span>
                 </div>
             </div>
         </header>
@@ -173,80 +189,80 @@
             <aside class="sidebar">
                 <!-- 账号状态 -->
                 <div class="glass-card shadow-sm">
-                    <div class="px-5 py-4 border-b border-gray-50 flex items-center gap-3 font-bold text-base text-gray-700 bg-gray-50/50 rounded-t-xl">
+                    <div class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 font-bold text-base text-gray-700 dark:text-gray-200 bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
                         <span>🔐</span> 登录信息
                     </div>
                     
-                    <div id="login-loading" class="p-8 text-center text-sm text-gray-400">正在检查登录状态...</div>
+                    <div id="login-loading" class="p-8 text-center text-sm text-gray-400 dark:text-gray-500">正在检查登录状态...</div>
 
                     <!-- 未登录 -->
                     <div id="login-section" class="hidden p-6 text-center">
                         <div id="qrcode-placeholder" class="mb-4">
-                            <button class="w-full py-3 bg-blue-500 text-white rounded-xl text-sm font-bold hover:bg-blue-600 transition shadow-md shadow-blue-100" onclick="generateQrCode()">
+                            <button class="w-full py-3 bg-bili-pink text-white rounded-xl text-sm font-bold hover:bg-pink-600 transition shadow-md shadow-pink-100 dark:shadow-pink-900/20" onclick="generateQrCode()">
                                 立即扫码登录
                             </button>
                         </div>
                         <div id="qrcode-wrapper" class="hidden">
-                            <img id="qrcode-img" class="w-40 h-40 mx-auto border-4 border-white shadow-sm rounded-xl mb-3" src="">
-                            <div id="qrcode-status" class="text-xs text-gray-500 mb-3">请使用 Bilibili App 扫码</div>
-                            <button class="text-sm text-blue-500 font-medium hover:underline" onclick="generateQrCode()">刷新二维码</button>
+                            <img id="qrcode-img" class="w-40 h-40 mx-auto border-4 border-white dark:border-gray-700 shadow-sm rounded-xl mb-3" src="">
+                            <div id="qrcode-status" class="text-xs text-gray-500 dark:text-gray-400 mb-3">请使用 Bilibili App 扫码</div>
+                            <button class="text-sm text-bili-pink font-medium hover:underline" onclick="generateQrCode()">刷新二维码</button>
                         </div>
                     </div>
 
                     <!-- 已登录 -->
                     <div id="logged-in-section" class="hidden account-mini">
                         <div class="flex items-center gap-4" style="margin-bottom: 1rem;">
-                            <img id="user-avatar" class="w-14 h-14 rounded-full border-2 border-white ring-2 ring-blue-400 shadow-sm" src="">
+                            <img id="user-avatar" class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-600 ring-2 ring-bili-pink shadow-sm" src="">
                             <div class="min-w-0">
                                 <div class="flex items-center gap-2">
-                                    <span id="user-name" class="font-bold text-base text-gray-800 truncate">--</span>
-                                    <span id="user-vip" class="text-[10px] bg-pink-500 text-white px-1.5 py-0.5 rounded font-bold hidden">VIP</span>
+                                    <span id="user-name" class="font-bold text-base text-gray-800 dark:text-gray-100 truncate">--</span>
+                                    <span id="user-vip" class="text-[10px] bg-bili-pink text-white px-1.5 py-0.5 rounded font-bold hidden">VIP</span>
                                 </div>
-                                <div id="user-uid" class="text-xs text-gray-400 mt-1">UID: --</div>
+                                <div id="user-uid" class="text-xs text-gray-400 dark:text-gray-500 mt-1">UID: --</div>
                             </div>
                         </div>
                         
                         <div class="space-y-4">
                             <div>
-                                <div class="flex justify-between text-xs text-gray-400 mb-2 font-medium">
-                                    <span class="text-orange-500 font-bold italic">LV<span id="user-level">0</span></span>
+                                <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-2 font-medium">
+                                    <span class="text-bili-pink font-bold italic">LV<span id="user-level">0</span></span>
                                     <span><span id="user-exp-current">0</span> / <span id="user-exp-next">0</span></span>
                                 </div>
-                                <div class="h-2 bg-gray-100 rounded-full overflow-hidden shadow-inner">
-                                    <div id="user-level-progress" class="h-full bg-gradient-to-r from-orange-400 to-yellow-300 transition-all duration-700" style="width: 0%"></div>
+                                <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                    <div id="user-level-progress" class="h-full bg-bili-pink transition-all duration-700" style="width: 0%"></div>
                                 </div>
                             </div>
                             
-                            <div class="grid grid-cols-3 gap-2 border-t border-b border-gray-50 bg-gray-50/30 rounded-lg" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
+                            <div class="grid grid-cols-3 gap-2 border-t border-b border-gray-50 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30 rounded-lg" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
                                 <div class="text-center">
-                                    <div class="text-[10px] text-gray-400 mb-1 font-medium">硬币</div>
-                                    <div id="user-money" class="text-sm font-bold text-gray-700">--</div>
+                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">硬币</div>
+                                    <div id="user-money" class="text-sm font-bold text-gray-700 dark:text-gray-200">--</div>
                                 </div>
-                                <div class="text-center border-l border-r border-gray-100">
-                                    <div class="text-[10px] text-gray-400 mb-1 font-medium">粉丝</div>
-                                    <div id="user-follower" class="text-sm font-bold text-gray-700">--</div>
+                                <div class="text-center border-l border-r border-gray-100 dark:border-gray-700">
+                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">粉丝</div>
+                                    <div id="user-follower" class="text-sm font-bold text-gray-700 dark:text-gray-200">--</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-[10px] text-gray-400 mb-1 font-medium">节操</div>
-                                    <div id="user-moral" class="text-sm font-bold text-gray-700">--</div>
+                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">节操</div>
+                                    <div id="user-moral" class="text-sm font-bold text-gray-700 dark:text-gray-200">--</div>
                                 </div>
                             </div>
                             
-                            <button class="w-full py-2.5 text-xs text-red-500 font-bold hover:bg-red-50 rounded-xl transition border border-red-100 mt-2" onclick="logout()">退出登录</button>
+                            <button class="w-full py-2.5 text-xs text-red-500 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition border border-red-100 dark:border-red-900/50 mt-2" onclick="logout()">退出登录</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- 插件设置 -->
                 <div class="glass-card shadow-sm">
-                    <div class="px-5 py-4 border-b border-gray-50 flex items-center gap-3 font-bold text-base text-gray-700 bg-gray-50/50 rounded-t-xl">
+                    <div class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 font-bold text-base text-gray-700 dark:text-gray-200 bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
                         <span>⚙️</span> 功能配置
                     </div>
                     <div class="p-5 space-y-6">
                         <div class="flex items-center justify-between">
                             <div>
-                                <div class="text-sm font-bold text-gray-800">全局解析开关</div>
-                                <div class="text-xs text-gray-400 mt-1">控制所有群的自动化处理</div>
+                                <div class="text-sm font-bold text-gray-800 dark:text-gray-100">全局解析开关</div>
+                                <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">控制所有群的自动化处理</div>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="global-toggle" onchange="toggleGlobal(this.checked)">
@@ -255,17 +271,17 @@
                         </div>
 
                         <div>
-                            <div class="text-sm font-bold text-gray-800 mb-2">默认发送模式</div>
-                            <select id="send-mode" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400 focus:bg-white transition" onchange="updateConfig()">
+                            <div class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">默认发送模式</div>
+                            <select id="send-mode" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-100 outline-none focus:border-bili-pink focus:bg-white dark:focus:bg-gray-600 transition" onchange="updateConfig()">
                                 <option value="info-only">仅发送视频概览卡片</option>
                                 <option value="with-video">发送概览卡片 + 视频源文件</option>
                             </select>
                         </div>
 
                         <div>
-                            <div class="text-sm font-bold text-gray-800 mb-2">单视频大小阈值 (MB)</div>
-                            <input type="number" id="max-video-size" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400 focus:bg-white transition" min="1" max="1000" onchange="updateConfig()">
-                            <p class="text-[10px] text-gray-400 mt-2">超过此大小的视频将只发送信息卡片</p>
+                            <div class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">单视频大小阈值 (MB)</div>
+                            <input type="number" id="max-video-size" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-100 outline-none focus:border-bili-pink focus:bg-white dark:focus:bg-gray-600 transition" min="1" max="1000" onchange="updateConfig()">
+                            <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-2">超过此大小的视频将只发送信息卡片</p>
                         </div>
                     </div>
                 </div>
@@ -274,32 +290,32 @@
 
             <!-- 右侧主区域 (75%) -->
             <section class="glass-card overflow-hidden shadow-sm">
-                <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-bili-dark sticky top-0 z-10 transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="text-xl">👥</span>
                         <div class="flex flex-col">
-                            <span class="font-bold text-lg text-gray-800 tracking-tight">群聊解析权限管理</span>
-                            <span id="total-groups" class="text-xs text-gray-400 font-normal">共计扫描到 0 个群聊</span>
+                            <span class="font-bold text-lg text-gray-800 dark:text-gray-100 tracking-tight">群聊解析权限管理</span>
+                            <span id="total-groups" class="text-xs text-gray-400 dark:text-gray-500 font-normal">共计扫描到 0 个群聊</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
-                            <input type="text" id="group-search" class="pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm w-64 outline-none focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all" placeholder="输入群名或群号搜索..." oninput="filterGroups()">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs">🔍</span>
+                            <input type="text" id="group-search" class="pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-100 w-64 outline-none focus:bg-white dark:focus:bg-gray-600 focus:border-bili-pink focus:ring-2 focus:ring-pink-50 dark:focus:ring-pink-900/30 transition-all placeholder-gray-400 dark:placeholder-gray-500" placeholder="输入群名或群号搜索..." oninput="filterGroups()">
                         </div>
-                        <div class="h-6 w-[1px] bg-gray-200 mx-1"></div>
+                        <div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-600 mx-1"></div>
                         <div class="flex gap-2">
-                            <button class="px-3 py-1.5 text-xs text-blue-600 font-bold hover:bg-blue-50 rounded-lg transition" onclick="toggleAllGroups(true)">一键全开</button>
-                            <button class="px-3 py-1.5 text-xs text-gray-400 font-bold hover:bg-gray-100 rounded-lg transition" onclick="toggleAllGroups(false)">一键全关</button>
+                            <button class="px-3 py-1.5 text-xs text-bili-pink font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition" onclick="toggleAllGroups(true)">一键全开</button>
+                            <button class="px-3 py-1.5 text-xs text-gray-400 dark:text-gray-500 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition" onclick="toggleAllGroups(false)">一键全关</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="scroll-area bg-gray-50/30" id="groups-scroll">
+                <div class="scroll-area bg-gray-50/30 dark:bg-gray-800/30" id="groups-scroll">
                     <!-- 加载中 -->
                     <div id="groups-loading" class="py-32 text-center">
-                        <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <div class="mt-4 text-sm text-gray-400 font-medium">正在拉取群组列表...</div>
+                        <div class="inline-block w-8 h-8 border-4 border-bili-pink border-t-transparent rounded-full animate-spin"></div>
+                        <div class="mt-4 text-sm text-gray-400 dark:text-gray-500 font-medium">正在拉取群组列表...</div>
                     </div>
 
                     <!-- 列表容器 -->
@@ -310,8 +326,8 @@
                     <!-- 空状态 -->
                     <div id="groups-empty" class="py-32 text-center hidden">
                         <div class="text-5xl mb-4 grayscale">🍃</div>
-                        <div class="text-base font-bold text-gray-400">未找到匹配的群聊</div>
-                        <p class="text-sm text-gray-300 mt-1">请尝试更换搜索关键词</p>
+                        <div class="text-base font-bold text-gray-400 dark:text-gray-500">未找到匹配的群聊</div>
+                        <p class="text-sm text-gray-300 dark:text-gray-600 mt-1">请尝试更换搜索关键词</p>
                     </div>
                 </div>
             </section>
@@ -415,7 +431,7 @@
         function showToast(msg, type = 'info') {
             const c = document.getElementById('toast-container');
             const t = document.createElement('div');
-            let bgClass = 'bg-blue-500';
+            let bgClass = 'bg-bili-pink';
             if (type === 'success') bgClass = 'bg-green-500';
             if (type === 'error') bgClass = 'bg-red-500';
             t.className = `toast ${bgClass}`;
@@ -436,7 +452,10 @@
                     globalEnabled = config.enabled !== false;
                     
                     const badge = document.getElementById('status-badge');
-                    badge.className = `ml-2 px-3 py-1 rounded-full text-xs font-bold border ${globalEnabled ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`;
+                    const isDark = document.documentElement.classList.contains('dark');
+                    badge.className = `ml-2 px-3 py-1 rounded-full text-xs font-bold border ${globalEnabled 
+                        ? 'bg-green-100 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' 
+                        : 'bg-red-100 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'}`;
                     badge.textContent = globalEnabled ? '运行中' : '已暂停';
                     
                     // 使用毫秒数实时更新运行时长
@@ -492,12 +511,12 @@
                 const avatarUrl = `http://p.qlogo.cn/gh/${g.group_id}/${g.group_id}/100/`;
                 return `
                 <div class="group-item shadow-sm">
-                    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-sm font-bold text-blue-400 mr-4 flex-shrink-0 border border-blue-100 overflow-hidden">
+                    <div class="w-10 h-10 rounded-lg bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center text-sm font-bold text-bili-pink mr-4 flex-shrink-0 border border-pink-100 dark:border-pink-800/30 overflow-hidden">
                         <img src="${avatarUrl}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='${(g.group_name || 'G')[0]}';">
                     </div>
                     <div class="min-w-0 flex-1 mr-3">
-                        <div class="text-sm font-bold text-gray-700 truncate mb-0.5">${g.group_name || '未知群名'}</div>
-                        <div class="text-[10px] text-gray-400 font-mono tracking-wider">${g.group_id}</div>
+                        <div class="text-sm font-bold text-gray-700 dark:text-gray-200 truncate mb-0.5">${g.group_name || '未知群名'}</div>
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-mono tracking-wider">${g.group_id}</div>
                     </div>
                     <label class="toggle-switch flex-shrink-0">
                         <input type="checkbox" ${g.biliEnabled !== false ? 'checked' : ''} ${!globalEnabled ? 'disabled' : ''} onchange="toggleGroup('${g.group_id}', this.checked)">
@@ -672,6 +691,19 @@
                 logoutState = 0;
             }
         }
+
+        // 暗色模式 - 跟随系统设置
+        function updateTheme() {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        
+        // 初始化主题并监听系统主题变化
+        updateTheme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
 
         document.addEventListener('DOMContentLoaded', () => { loadStatus(); loadGroups(); checkLoginStatus(); setInterval(loadStatus, 60000); });
         window.addEventListener('beforeunload', () => { stopPolling(); stopUptimeTimer(); });
