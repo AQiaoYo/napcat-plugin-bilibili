@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>B站视频解析 · 控制台</title>
+    <script src="static/plugin-info.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -130,9 +131,21 @@
         <!-- 顶部通栏 -->
         <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shadow-sm z-10">
             <div class="flex items-center gap-4">
-                <span class="text-3xl">📺</span>
+                <svg class="w-8 h-8" viewBox="0 0 1071 1024" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M887.365188 952.783894H184.455499C82.758914 952.783894 0 876.72402 0 783.272408V336.111466c0-93.477378 82.758914-169.537251 184.455499-169.537252h704.043373c51.969094 0 101.67082 20.225949 136.377002 55.498973A159.256801 159.256801 0 0 1 1071.846453 336.420652V783.272408c0 93.451613-82.758914 169.511486-184.481265 169.511486zM184.455499 251.600495c-54.829069 0-99.429218 37.901109-99.429218 84.510971V783.272408c0 46.609861 44.600149 84.51097 99.429218 84.51097H887.365188c54.829069 0 99.429218-37.901109 99.429218-84.51097V335.415796a74.539706 74.539706 0 0 0-22.570613-53.72115c-18.808844-19.11803-46.377972-30.09415-75.750687-30.094151z" fill="#FB7299"/>
+                    <path d="M397.794168 495.316736L219.651226 535.923226a36.355177 36.355177 0 0 1-15.175903-71.112889l178.142942-40.55496a35.8141 35.8141 0 0 1 43.131513 27.955611c4.302845 19.169562-8.786049 38.854434-27.95561 43.157279zM674.052285 495.316736c-19.169562-4.302845-32.258456-23.987717-27.955611-43.157279a35.8141 35.8141 0 0 1 43.131514-27.955611l178.142941 40.55496a36.355177 36.355177 0 0 1-15.175902 71.112889l-178.142942-40.554959zM268.811876 1023.999845a56.684187 56.684187 0 0 1-56.684187-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015zM803.034577 1023.999845a56.684187 56.684187 0 0 1-56.813015-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015z" fill="#FB7299"/>
+                    <path d="M248.918821 42.946487m26.538343-29.671097l0 0q26.538343-29.671097 56.20944-3.132755l185.900469 166.272595q29.671097 26.538343 3.132754 56.20944l0 0q-26.538343 29.671097-56.20944 3.132755l-185.900468-166.272595q-29.671097-26.538343-3.132755-56.20944Z" fill="#FB7299"/>
+                    <path d="M577.629382 262.330313m-26.538343-29.671098l0 0q-26.538343-29.671097 3.132755-56.20944l185.900468-166.272595q29.671097-26.538343 56.209441 3.132755l0 0q26.538343 29.671097-3.132755 56.20944l-185.900468 166.272595q-29.671097 26.538343-56.209441-3.132755Z" fill="#FB7299"/>
+                    <path d="M595.621982 756.373184a39.447041 39.447041 0 0 1-30.738289-14.686357L533.346672 702.677799l-32.438814 38.467951a39.730462 39.730462 0 0 1-55.473207 5.153108l-44.316729-36.535535a23.188986 23.188986 0 1 1 29.501543-35.762569l39.163621 32.258455 33.495202-39.601634a39.6274 39.6274 0 0 1 61.038563 0.566842l32.722236 40.323069 45.424646-33.933215A23.188986 23.188986 0 1 1 669.904033 710.665117l-50.655051 37.798047a39.369745 39.369745 0 0 1-23.627 7.91002z" fill="#FB7299"/>
+                </svg>
                 <h1 class="text-xl font-bold text-gray-800 tracking-tight">B站视频解析 · 控制中心</h1>
                 <span id="status-badge" class="ml-2 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600 border border-green-200">运行中</span>
+                <button class="ml-2 p-2 hover:bg-gray-100 rounded-full transition-colors group" title="刷新数据" onclick="refreshAll()">
+                    <svg class="w-5 h-5 text-gray-500 group-hover:text-bili-blue transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                    </svg>
+                </button>
             </div>
 
             <div class="flex items-center h-10">
@@ -150,7 +163,7 @@
                 </div>
                 <div class="top-stat-item flex flex-col items-center border-none">
                     <span class="text-xs text-gray-400 mb-1">运行时长</span>
-                    <span id="uptime" class="text-lg font-bold text-gray-700">--</span>
+                    <span id="uptime" class="text-lg font-bold text-gray-700 min-w-[5em] text-center" style="font-variant-numeric: tabular-nums;">--</span>
                 </div>
             </div>
         </header>
@@ -182,7 +195,7 @@
 
                     <!-- 已登录 -->
                     <div id="logged-in-section" class="hidden account-mini">
-                        <div class="flex items-center gap-4 mb-5">
+                        <div class="flex items-center gap-4" style="margin-bottom: 1rem;">
                             <img id="user-avatar" class="w-14 h-14 rounded-full border-2 border-white ring-2 ring-blue-400 shadow-sm" src="">
                             <div class="min-w-0">
                                 <div class="flex items-center gap-2">
@@ -314,13 +327,65 @@
         let pollTimer = null;
         let countdownTimer = null;
         let remainingTime = 180;
+        
+        // 运行时长相关变量
+        let serverUptimeMs = 0;
+        let uptimeTimerId = null;
+        let lastFetchTime = 0;
 
         function authHeaders(h = {}) { if (token) h['Authorization'] = 'Bearer ' + token; return h; }
+        
+        // 格式化运行时长
+        function formatUptime(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) {
+                const h = hours % 24;
+                const m = minutes % 60;
+                return `${days}天${h}时${m}分`;
+            } else if (hours > 0) {
+                const m = minutes % 60;
+                const s = seconds % 60;
+                return `${hours}时${m}分${s}秒`;
+            } else if (minutes > 0) {
+                const s = seconds % 60;
+                return `${minutes}分${s}秒`;
+            } else {
+                return `${seconds}秒`;
+            }
+        }
+        
+        // 更新运行时长显示
+        function updateUptimeDisplay() {
+            const uptimeEl = document.getElementById('uptime');
+            if (serverUptimeMs > 0) {
+                const elapsed = Date.now() - lastFetchTime;
+                const currentUptime = serverUptimeMs + elapsed;
+                uptimeEl.textContent = formatUptime(currentUptime);
+            }
+        }
+        
+        // 启动运行时长定时器
+        function startUptimeTimer() {
+            if (uptimeTimerId) clearInterval(uptimeTimerId);
+            uptimeTimerId = setInterval(updateUptimeDisplay, 1000);
+        }
 
         async function resolveApiBase() {
-            const tries = [window.__PLUGIN_NAME__, 'napcat-plugin-bilibili'];
+            const tries = [];
+            if (window.__PLUGIN_NAME__) tries.push(window.__PLUGIN_NAME__);
+            try {
+                if (window.parent && window.parent.__PLUGIN_NAME__) tries.push(window.parent.__PLUGIN_NAME__);
+            } catch (e) { }
+            
             const extMatch = location.pathname.match(/\/ext\/([^\/]+)/);
             if (extMatch) tries.unshift(extMatch[1]);
+            
+            // 默认兜底
+            tries.push('napcat-plugin-bilibili');
             
             for (const name of [...new Set(tries.filter(Boolean))]) {
                 const base = '/api/Plugin/ext/' + name;
@@ -329,7 +394,7 @@
                     if (r.ok) return base;
                 } catch (e) {}
             }
-            return '/api/Plugin/ext/napcat-plugin-bilibili';
+            return '/api/Plugin/ext/' + (window.__PLUGIN_NAME__ || 'napcat-plugin-bilibili');
         }
 
         let API_BASE_P = resolveApiBase();
@@ -340,13 +405,20 @@
                 ...options,
                 headers: { 'Content-Type': 'application/json', ...options.headers, ...authHeaders() }
             });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || `HTTP ${res.status}`);
+            }
             return res.json();
         }
 
         function showToast(msg, type = 'info') {
             const c = document.getElementById('toast-container');
             const t = document.createElement('div');
-            t.className = `toast ${type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`;
+            let bgClass = 'bg-blue-500';
+            if (type === 'success') bgClass = 'bg-green-500';
+            if (type === 'error') bgClass = 'bg-red-500';
+            t.className = `toast ${bgClass}`;
             t.textContent = msg;
             c.appendChild(t);
             setTimeout(() => {
@@ -360,14 +432,23 @@
             try {
                 const res = await authFetch('/status');
                 if (res.code === 0) {
-                    const { config, uptimeFormatted, stats } = res.data;
+                    const { config, uptime, uptimeFormatted, stats } = res.data;
                     globalEnabled = config.enabled !== false;
                     
                     const badge = document.getElementById('status-badge');
                     badge.className = `ml-2 px-3 py-1 rounded-full text-xs font-bold border ${globalEnabled ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`;
                     badge.textContent = globalEnabled ? '运行中' : '已暂停';
                     
-                    document.getElementById('uptime').textContent = uptimeFormatted || '--';
+                    // 使用毫秒数实时更新运行时长
+                    if (typeof uptime === 'number' && uptime > 0) {
+                        serverUptimeMs = uptime;
+                        lastFetchTime = Date.now();
+                        updateUptimeDisplay();
+                        startUptimeTimer();
+                    } else {
+                        document.getElementById('uptime').textContent = uptimeFormatted || '--';
+                    }
+                    
                     document.getElementById('global-toggle').checked = globalEnabled;
                     document.getElementById('send-mode').value = config.sendMode || 'info-only';
                     document.getElementById('max-video-size').value = config.maxVideoSizeMB || 100;
@@ -407,10 +488,12 @@
             }
 
             empty.classList.add('hidden'); container.classList.remove('hidden');
-            container.innerHTML = filtered.map(g => `
+            container.innerHTML = filtered.map(g => {
+                const avatarUrl = `http://p.qlogo.cn/gh/${g.group_id}/${g.group_id}/100/`;
+                return `
                 <div class="group-item shadow-sm">
-                    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-sm font-bold text-blue-400 mr-4 flex-shrink-0 border border-blue-100">
-                        ${(g.group_name || 'G')[0]}
+                    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-sm font-bold text-blue-400 mr-4 flex-shrink-0 border border-blue-100 overflow-hidden">
+                        <img src="${avatarUrl}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='${(g.group_name || 'G')[0]}';">
                     </div>
                     <div class="min-w-0 flex-1 mr-3">
                         <div class="text-sm font-bold text-gray-700 truncate mb-0.5">${g.group_name || '未知群名'}</div>
@@ -421,7 +504,7 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function filterGroups() { renderGroups(document.getElementById('group-search').value.trim()); }
@@ -454,20 +537,51 @@
                     if (g) g.biliEnabled = enabled;
                     document.getElementById('enabled-groups').textContent = groupsData.filter(x => x.biliEnabled !== false).length;
                 }
-            } catch (e) { loadGroups(); }
+            } catch (e) { 
+                console.error('Toggle group failed:', e);
+                showToast('更新失败', 'error');
+                loadGroups(); 
+            }
         }
 
         async function toggleAllGroups(enabled) {
-            if (!confirm(`确定要批量${enabled ? '启用' : '禁用'}所有选中的群聊吗？`)) return;
-            for (const g of groupsData) {
-                try {
-                    await authFetch(`/groups/${g.group_id}/config`, { method: 'POST', body: JSON.stringify({ enabled }) });
-                    g.biliEnabled = enabled;
-                } catch (e) {}
+            // 检查是否有群数据
+            if (!groupsData || groupsData.length === 0) {
+                showToast('群列表为空，请先刷新数据', 'error');
+                return;
             }
-            document.getElementById('enabled-groups').textContent = groupsData.filter(x => x.biliEnabled !== false).length;
-            renderGroups();
-            showToast('批量同步成功', 'success');
+            
+            try {
+                const groupIds = groupsData.map(g => g.group_id);
+                showToast(`正在批量${enabled ? '启用' : '禁用'} ${groupIds.length} 个群...`, 'info');
+                
+                const res = await authFetch('/groups/bulk-config', {
+                    method: 'POST',
+                    body: JSON.stringify({ enabled, groupIds })
+                });
+                
+                if (res.code === 0) {
+                    groupsData.forEach(g => g.biliEnabled = enabled);
+                    document.getElementById('enabled-groups').textContent = groupsData.filter(x => x.biliEnabled !== false).length;
+                    renderGroups(document.getElementById('group-search').value.trim());
+                    showToast(`已${enabled ? '启用' : '禁用'}所有群聊`, 'success');
+                } else {
+                    showToast('操作失败: ' + (res.message || '未知错误'), 'error');
+                }
+            } catch (e) {
+                console.error('Bulk update failed:', e);
+                showToast('批量操作异常: ' + (e.message || '网络错误'), 'error');
+            }
+        }
+
+        async function refreshAll() {
+            showToast('正在刷新...', 'info');
+            await Promise.all([
+                loadStatus(),
+                loadGroups(),
+                checkLoginStatus()
+            ]);
+            showToast('刷新完成', 'success');
         }
 
         async function checkLoginStatus() {
@@ -535,17 +649,32 @@
         }
 
         function stopPolling() { clearInterval(pollTimer); clearInterval(countdownTimer); }
+        function stopUptimeTimer() { if (uptimeTimerId) { clearInterval(uptimeTimerId); uptimeTimerId = null; } }
 
+        // 退出登录状态：0-初始，1-待确认，2-执行中
+        let logoutState = 0;
         async function logout() {
-            if (!confirm('确定要退出当前账号吗？此操作不可撤销。')) return;
+            if (logoutState === 0) {
+                logoutState = 1;
+                showToast('再次点击确认退出登录', 'info');
+                setTimeout(() => { logoutState = 0; }, 3000); // 3秒后重置
+                return;
+            }
+            if (logoutState === 2) return; // 防止重复点击
+            logoutState = 2;
+            
             try {
                 const res = await authFetch('/login/logout', { method: 'POST' });
-                if (res.code === 0) { showLoginUI(); showToast('账号已退出'); }
-            } catch (e) {}
+                if (res.code === 0) { showLoginUI(); showToast('账号已退出', 'success'); }
+            } catch (e) {
+                showToast('退出失败', 'error');
+            } finally {
+                logoutState = 0;
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', () => { loadStatus(); loadGroups(); checkLoginStatus(); setInterval(loadStatus, 30000); });
-        window.addEventListener('beforeunload', stopPolling);
+        document.addEventListener('DOMContentLoaded', () => { loadStatus(); loadGroups(); checkLoginStatus(); setInterval(loadStatus, 60000); });
+        window.addEventListener('beforeunload', () => { stopPolling(); stopUptimeTimer(); });
     </script>
 </body>
 
