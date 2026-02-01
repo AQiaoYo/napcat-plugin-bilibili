@@ -9,7 +9,7 @@ import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-oneb
 import type { ActionMap } from 'napcat-types/napcat-onebot/action/index';
 import type { NetworkAdapterConfig } from 'napcat-types/napcat-onebot/config/config';
 import { DEFAULT_CONFIG, getDefaultConfig } from '../config';
-import type { PluginConfig, GroupBilibiliConfig } from '../types';
+import type { PluginConfig, GroupBilibiliConfig, SendMode } from '../types';
 
 /** 日志前缀 */
 const LOG_TAG = '[Bilibili]';
@@ -31,6 +31,18 @@ function sanitizeConfig(raw: unknown): PluginConfig {
     // enabled
     if (typeof (raw as Record<string, unknown>)['enabled'] === 'boolean') {
         out.enabled = (raw as Record<string, unknown>)['enabled'] as boolean;
+    }
+
+    // sendMode
+    const rawSendMode = (raw as Record<string, unknown>)['sendMode'];
+    if (rawSendMode === 'info-only' || rawSendMode === 'with-video') {
+        out.sendMode = rawSendMode as SendMode;
+    }
+
+    // maxVideoSizeMB
+    const rawMaxSize = (raw as Record<string, unknown>)['maxVideoSizeMB'];
+    if (typeof rawMaxSize === 'number' && rawMaxSize > 0) {
+        out.maxVideoSizeMB = rawMaxSize;
     }
 
     // groupConfigs
