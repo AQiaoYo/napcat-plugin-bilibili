@@ -111,7 +111,8 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                             pluginName: pluginState.pluginName,
                             uptime,
                             uptimeFormatted: pluginState.getUptimeFormatted(),
-                            config: pluginState.getConfig()
+                            config: pluginState.getConfig(),
+                            stats: pluginState.stats
                         }
                     });
                 });
