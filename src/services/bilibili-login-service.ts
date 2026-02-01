@@ -3,7 +3,13 @@
  * 提供二维码生成、状态轮询、Cookie 管理功能
  */
 
+/**
+ * B 站扫码登录服务
+ * 提供二维码生成、状态轮询、Cookie 管理功能
+ */
+
 import { pluginState } from '../core/state';
+import { performCookieRefresh } from './cookie-refresh-service';
 import type {
     BilibiliCredential,
     BilibiliUserInfo,
@@ -12,6 +18,9 @@ import type {
     QrCodePollResult,
 } from '../types';
 import { QrCodeLoginStatus } from '../types';
+
+/** 自动刷新定时器 */
+let refreshTimer: NodeJS.Timeout | null = null;
 
 // ==================== API 接口 ====================
 
@@ -373,4 +382,39 @@ export function getQrSessionStatus(): {
         isExpired: remaining <= 0,
         remainingTime: Math.floor(remaining / 1000),
     };
+}
+
+/**
+ * 启动自动刷新服务
+ * 每天检查一次 Cookie 状态
+ */
+export function startAutoRefreshService() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+    }
+
+    pluginState.log('info', '启动 Cookie 自动刷新服务');
+
+    // 立即检查一次
+    performCookieRefresh().catch(e => {
+        pluginState.log('error', '初始 Cookie 检查失败:', e);
+    });
+
+    // 每 24 小时检查一次
+    refreshTimer = setInterval(() => {
+        performCookieRefresh().catch(e => {
+            pluginState.log('error', '自动 Cookie 刷新失败:', e);
+        });
+    }, 24 * 60 * 60 * 1000);
+}
+
+/**
+ * 停止自动刷新服务
+ */
+export function stopAutoRefreshService() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+        pluginState.log('info', '已停止 Cookie 自动刷新服务');
+    }
 }
