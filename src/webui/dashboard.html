@@ -4,51 +4,350 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>NapCat 插件仪表盘 · 模板插件</title>
+    <title>B站视频解析 · 仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans SC';
-            padding: 20px;
-            color: #222
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
         }
 
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
-            background: #fff
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
         }
 
-        pre {
-            background: #f7f7f7;
-            padding: 12px;
-            border-radius: 6px
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.toggle-slider {
+            background-color: #00a1d6;
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
     </style>
 </head>
 
-<body>
-    <div class="card">
-        <h1>插件仪表盘（模板）</h1>
-        <p>这是一个通用的插件仪表盘模板。请在开发新插件时替换或扩展此页面。</p>
-        <h3>快速提示</h3>
-        <ul>
-            <li>路由前缀由后端 <code>ROUTE_PREFIX</code> 控制，默认：<code>/plugin-template</code></li>
-            <li>插件可通过 REST 接口读取/保存配置：<code>GET /plugin-template/config</code></li>
-            <li>通过脚本 <code>/plugin-template/static/plugin-info.js</code> 可以获取注入的插件名</li>
-        </ul>
-        <h3>示例：使用 authFetch</h3>
-        <pre>
-            <code>
-            async function authFetch(path, opts = {}) {
-                const token = new URLSearchParams(location.search).get('webui_token') || '';
-                const url = `/plugin-template${path}?webui_token=${token}`;
-                const res = await fetch(url, opts);
-                return res.json();
-                }
-            </code>
-        </pre>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- 标题区域 -->
+        <div class="bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl p-6 mb-6 shadow-lg">
+            <div class="flex items-center gap-3">
+                <span class="text-4xl">📺</span>
+                <div>
+                    <h1 class="text-2xl font-bold">B站视频链接解析</h1>
+                    <p class="text-blue-100 text-sm mt-1">自动解析群消息中的 B 站视频链接并发送视频信息</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 状态卡片 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <span>📊</span> 插件状态
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <div class="text-sm text-blue-600">全局开关</div>
+                    <div id="global-status" class="text-xl font-bold text-blue-700 mt-1 loading">加载中...</div>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4">
+                    <div class="text-sm text-green-600">运行时长</div>
+                    <div id="uptime" class="text-xl font-bold text-green-700 mt-1 loading">加载中...</div>
+                </div>
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <div class="text-sm text-purple-600">已启用群数</div>
+                    <div id="enabled-groups" class="text-xl font-bold text-purple-700 mt-1 loading">加载中...</div>
+                </div>
+                <div class="bg-orange-50 rounded-lg p-4">
+                    <div class="text-sm text-orange-600">总群数</div>
+                    <div id="total-groups" class="text-xl font-bold text-orange-700 mt-1 loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 全局开关 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                        <span>⚡</span> 全局开关
+                    </h2>
+                    <p class="text-gray-500 text-sm mt-1">关闭后将停止解析所有群的 B 站链接</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="global-toggle" onchange="toggleGlobal(this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 群列表 -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <span>👥</span> 群聊配置
+                <span class="text-sm font-normal text-gray-400">（单独控制每个群的解析开关）</span>
+            </h2>
+
+            <div id="groups-loading" class="text-center py-8 text-gray-500">
+                <div class="loading">正在加载群列表...</div>
+            </div>
+
+            <div id="groups-container" class="space-y-3 hidden">
+                <!-- 群列表将在这里动态生成 -->
+            </div>
+
+            <div id="groups-empty" class="text-center py-8 text-gray-400 hidden">
+                暂无群聊数据
+            </div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mt-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <span>💡</span> 使用说明
+            </h2>
+            <div class="text-gray-600 text-sm space-y-2">
+                <p>✅ 支持的链接格式：</p>
+                <ul class="list-disc list-inside ml-4 text-gray-500">
+                    <li>BV号：<code class="bg-gray-100 px-1 rounded">BV1xx411c7mD</code></li>
+                    <li>AV号：<code class="bg-gray-100 px-1 rounded">av170001</code></li>
+                    <li>完整链接：<code class="bg-gray-100 px-1 rounded">https://www.bilibili.com/video/BV1xx411c7mD</code>
+                    </li>
+                    <li>短链接：<code class="bg-gray-100 px-1 rounded">https://b23.tv/xxxxxx</code></li>
+                </ul>
+                <p class="mt-3">📤 解析成功后会发送视频封面、标题、UP主、播放量等信息到群里。</p>
+            </div>
+        </div>
     </div>
+
+    <script>
+        // 路由前缀
+        const ROUTE_PREFIX = '/bilibili';
+
+        // 获取 webui_token
+        const token = new URLSearchParams(window.location.search).get('webui_token') || '';
+
+        // 带鉴权的 fetch
+        async function authFetch(path, options = {}) {
+            const url = `${ROUTE_PREFIX}${path}?webui_token=${token}`;
+            const res = await fetch(url, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+            return res.json();
+        }
+
+        // 群数据缓存
+        let groupsData = [];
+        let globalEnabled = true;
+
+        // 加载状态
+        async function loadStatus() {
+            try {
+                const res = await authFetch('/status');
+                if (res.code === 0) {
+                    const data = res.data;
+                    globalEnabled = data.config?.enabled !== false;
+
+                    document.getElementById('global-status').textContent = globalEnabled ? '已启用' : '已禁用';
+                    document.getElementById('global-status').className = globalEnabled
+                        ? 'text-xl font-bold text-green-700 mt-1'
+                        : 'text-xl font-bold text-red-700 mt-1';
+
+                    document.getElementById('uptime').textContent = data.uptimeFormatted || '未知';
+                    document.getElementById('uptime').classList.remove('loading');
+
+                    document.getElementById('global-toggle').checked = globalEnabled;
+                }
+            } catch (e) {
+                console.error('加载状态失败:', e);
+            }
+        }
+
+        // 加载群列表
+        async function loadGroups() {
+            try {
+                const res = await authFetch('/groups');
+                if (res.code === 0) {
+                    groupsData = res.data || [];
+
+                    const enabledCount = groupsData.filter(g => g.biliEnabled !== false).length;
+                    document.getElementById('enabled-groups').textContent = enabledCount;
+                    document.getElementById('enabled-groups').classList.remove('loading');
+
+                    document.getElementById('total-groups').textContent = groupsData.length;
+                    document.getElementById('total-groups').classList.remove('loading');
+
+                    renderGroups();
+                }
+            } catch (e) {
+                console.error('加载群列表失败:', e);
+                document.getElementById('groups-loading').innerHTML = '<div class="text-red-500">加载失败</div>';
+            }
+        }
+
+        // 渲染群列表
+        function renderGroups() {
+            const container = document.getElementById('groups-container');
+            const loading = document.getElementById('groups-loading');
+            const empty = document.getElementById('groups-empty');
+
+            loading.classList.add('hidden');
+
+            if (groupsData.length === 0) {
+                empty.classList.remove('hidden');
+                container.classList.add('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            container.classList.remove('hidden');
+
+            container.innerHTML = groupsData.map(group => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-500 font-bold">
+                            ${(group.group_name || '群')[0]}
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-700">${escapeHtml(group.group_name || '未知群')}</div>
+                            <div class="text-sm text-gray-400">${group.group_id}</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" 
+                            ${group.biliEnabled !== false ? 'checked' : ''} 
+                            onchange="toggleGroup('${group.group_id}', this.checked)"
+                            ${!globalEnabled ? 'disabled' : ''}>
+                        <span class="toggle-slider ${!globalEnabled ? 'opacity-50 cursor-not-allowed' : ''}"></span>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        // 切换全局开关
+        async function toggleGlobal(enabled) {
+            try {
+                const res = await authFetch('/config', {
+                    method: 'POST',
+                    body: JSON.stringify({ enabled })
+                });
+
+                if (res.code === 0) {
+                    globalEnabled = enabled;
+                    document.getElementById('global-status').textContent = enabled ? '已启用' : '已禁用';
+                    document.getElementById('global-status').className = enabled
+                        ? 'text-xl font-bold text-green-700 mt-1'
+                        : 'text-xl font-bold text-red-700 mt-1';
+
+                    // 更新群列表开关状态
+                    renderGroups();
+                } else {
+                    alert('保存失败: ' + (res.message || '未知错误'));
+                    document.getElementById('global-toggle').checked = !enabled;
+                }
+            } catch (e) {
+                console.error('切换全局开关失败:', e);
+                alert('操作失败');
+                document.getElementById('global-toggle').checked = !enabled;
+            }
+        }
+
+        // 切换群开关
+        async function toggleGroup(groupId, enabled) {
+            try {
+                const res = await authFetch(`/groups/${groupId}/config`, {
+                    method: 'POST',
+                    body: JSON.stringify({ enabled })
+                });
+
+                if (res.code === 0) {
+                    // 更新本地数据
+                    const group = groupsData.find(g => String(g.group_id) === String(groupId));
+                    if (group) {
+                        group.biliEnabled = enabled;
+                    }
+
+                    // 更新统计
+                    const enabledCount = groupsData.filter(g => g.biliEnabled !== false).length;
+                    document.getElementById('enabled-groups').textContent = enabledCount;
+                } else {
+                    alert('保存失败: ' + (res.message || '未知错误'));
+                    // 恢复原状态
+                    loadGroups();
+                }
+            } catch (e) {
+                console.error('切换群开关失败:', e);
+                alert('操作失败');
+                loadGroups();
+            }
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStatus();
+            loadGroups();
+
+            // 定时刷新运行时长
+            setInterval(loadStatus, 60000);
+        });
+    </script>
 </body>
 
 </html>
