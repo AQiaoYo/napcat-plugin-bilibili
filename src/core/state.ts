@@ -9,7 +9,7 @@ import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-oneb
 import type { ActionMap } from 'napcat-types/napcat-onebot/action/index';
 import type { NetworkAdapterConfig } from 'napcat-types/napcat-onebot/config/config';
 import { DEFAULT_CONFIG, getDefaultConfig } from '../config';
-import type { PluginConfig, GroupBilibiliConfig, SendMode } from '../types';
+import type { PluginConfig, GroupBilibiliConfig, SendMode, BilibiliCredential } from '../types';
 
 /** 日志前缀 */
 const LOG_TAG = '[Bilibili]';
@@ -43,6 +43,27 @@ function sanitizeConfig(raw: unknown): PluginConfig {
     const rawMaxSize = (raw as Record<string, unknown>)['maxVideoSizeMB'];
     if (typeof rawMaxSize === 'number' && rawMaxSize > 0) {
         out.maxVideoSizeMB = rawMaxSize;
+    }
+
+    // credential (B站登录凭据)
+    const rawCredential = (raw as Record<string, unknown>)['credential'];
+    if (isObject(rawCredential)) {
+        const cred: BilibiliCredential = {
+            sessdata: '',
+            bili_jct: '',
+            dedeuserid: '',
+        };
+        const c = rawCredential as Record<string, unknown>;
+        if (typeof c['sessdata'] === 'string') cred.sessdata = c['sessdata'];
+        if (typeof c['bili_jct'] === 'string') cred.bili_jct = c['bili_jct'];
+        if (typeof c['dedeuserid'] === 'string') cred.dedeuserid = c['dedeuserid'];
+        if (typeof c['refresh_token'] === 'string') cred.refresh_token = c['refresh_token'];
+        if (typeof c['login_time'] === 'number') cred.login_time = c['login_time'];
+
+        // 只有当必要字段都存在时才保存
+        if (cred.sessdata && cred.bili_jct && cred.dedeuserid) {
+            out.credential = cred;
+        }
     }
 
     // groupConfigs
