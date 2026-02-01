@@ -46,6 +46,21 @@ const DEFAULT_HEADERS = {
     'Accept': 'application/json'
 };
 
+/**
+ * 获取带登录凭据的请求头
+ */
+function getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = { ...DEFAULT_HEADERS };
+    const credential = pluginState.config.credential;
+
+    if (credential?.sessdata && credential?.bili_jct && credential?.dedeuserid) {
+        headers['Cookie'] = `SESSDATA=${credential.sessdata}; bili_jct=${credential.bili_jct}; DedeUserID=${credential.dedeuserid}`;
+        pluginState.logDebug('使用登录凭据发送请求');
+    }
+
+    return headers;
+}
+
 // ==================== 工具函数 ====================
 
 /**
@@ -218,11 +233,7 @@ export async function fetchVideoInfo(options: { bvid?: string; aid?: number }): 
 
         const response = await fetch(url, {
             method: 'GET',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': 'https://www.bilibili.com/',
-                'Accept': 'application/json'
-            }
+            headers: getAuthHeaders()
         });
 
         if (!response.ok) {
@@ -388,17 +399,17 @@ export async function fetchVideoPlayUrl(options: { bvid?: string; aid?: number; 
             params.set('avid', aid.toString());
         }
         params.set('cid', cid.toString());
-        params.set('qn', '64'); // 720P 画质
+        params.set('qn', '80'); // 1080P 画质 (需要登录才能获取更高清晰度)
         params.set('fnval', '1'); // MP4 格式
         params.set('fnver', '0');
-        params.set('fourk', '0');
+        params.set('fourk', '1'); // 允许 4K
 
         const url = `${BILIBILI_PLAYURL_API}?${params.toString()}`;
         pluginState.logDebug(`请求视频播放URL: ${url}`);
 
         const response = await fetch(url, {
             method: 'GET',
-            headers: DEFAULT_HEADERS
+            headers: getAuthHeaders()
         });
 
         if (!response.ok) {
