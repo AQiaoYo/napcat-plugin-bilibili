@@ -23,7 +23,7 @@ export function initConfigUI(ctx: NapCatPluginContext) {
         ctx.NapCatConfig.html(`
             <div style="padding: 16px; background: #e0f2fe; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0ea5e9;">
                 <h3 style="margin: 0; color: #0c4a6e;">📺 B站视频链接解析</h3>
-                <p style="margin: 8px 0 0; color: #075985; font-size: 14px;">启用后，插件将自动解析群消息中的 B 站视频链接，并发送视频信息卡片到群里。</p>
+                <p style="margin: 8px 0 0; color: #075985; font-size: 14px;">启用后，插件将自动解析群消息中的 B 站视频链接，并以合并转发消息发送到群里。</p>
                 <p style="margin: 6px 0 0; color: #0369a1; font-size: 12px;">💡 支持解析 BV号、AV号、短链接 (b23.tv) 等格式。</p>
             </div>
         `),
