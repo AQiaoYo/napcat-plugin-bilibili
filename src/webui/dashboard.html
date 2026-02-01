@@ -26,10 +26,27 @@
         }
     </script>
     <style>
-        * { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; overflow: hidden; background: #f0f2f5; color: #1f2937; font-size: 16px; transition: background 0.3s, color 0.3s; }
-        html.dark, html.dark body { background: #18191C; color: #e5e7eb; }
-        
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #f0f2f5;
+            color: #1f2937;
+            font-size: 16px;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        html.dark,
+        html.dark body {
+            background: #18191C;
+            color: #e5e7eb;
+        }
+
         .app-layout {
             display: grid;
             grid-template-rows: auto 1fr;
@@ -38,26 +55,175 @@
 
         .main-content {
             display: grid;
-            grid-template-columns: 25% 1fr;
+            grid-template-columns: 1fr;
             gap: 16px;
             padding: 16px;
             min-height: 0;
+            overflow-y: auto;
+        }
+
+        /* 中等屏幕：左侧固定宽度 */
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 280px 1fr;
+                overflow-y: hidden;
+            }
+        }
+
+        /* 大屏幕：左侧更宽 */
+        @media (min-width: 1024px) {
+            .main-content {
+                grid-template-columns: 320px 1fr;
+            }
+        }
+
+        /* 超大屏幕：恢复百分比布局 */
+        @media (min-width: 1280px) {
+            .main-content {
+                grid-template-columns: 25% 1fr;
+            }
+        }
+
+        /* ========== 动画系统 ========== */
+
+        /* 缓动函数 */
+        :root {
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-out-back: cubic-bezier(0.34, 1.2, 0.64, 1);
+            --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        /* 页面加载淡入动画 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Header 滑入 */
+        header {
+            animation: fadeInUp 0.6s var(--ease-smooth) both;
+        }
+
+        /* Header 响应式 */
+        @media (max-width: 767px) {
+            header {
+                flex-direction: column;
+                gap: 12px;
+                padding: 12px 16px;
+            }
+
+            header>div:first-child {
+                width: 100%;
+                justify-content: center;
+            }
+
+            header>div:last-child {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .top-stat-item {
+                padding: 0 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .top-stat-item {
+                padding: 0 8px;
+            }
+
+            .top-stat-item span:first-child {
+                font-size: 10px;
+            }
+
+            .top-stat-item .stat-number,
+            .top-stat-item span:last-child {
+                font-size: 14px;
+            }
+        }
+
+        /* 侧边栏卡片动画 */
+        .sidebar>.glass-card:nth-child(1) {
+            animation: slideInFromLeft 0.5s var(--ease-out-back) 0.1s both;
+        }
+
+        .sidebar>.glass-card:nth-child(2) {
+            animation: slideInFromLeft 0.5s var(--ease-out-back) 0.2s both;
+        }
+
+        /* 主区域卡片动画 */
+        .main-content>section.glass-card {
+            animation: slideInFromRight 0.5s var(--ease-out-back) 0.15s both;
         }
 
         /* 统一卡片 */
         .glass-card {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
             border: 1px solid #e5e7eb;
             display: flex;
             flex-direction: column;
-            transition: background 0.3s, border-color 0.3s;
+            transition: background 0.4s ease, border-color 0.4s ease, transform 0.3s var(--ease-spring), box-shadow 0.3s ease;
         }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
         .dark .glass-card {
             background: #2a2b2e;
             border-color: #3f4045;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark .glass-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
         /* 侧边栏垂直布局 */
@@ -70,20 +236,84 @@
             padding-right: 4px;
         }
 
-        /* 滚动条美化 */
-        .sidebar::-webkit-scrollbar, .scroll-area::-webkit-scrollbar { width: 4px; }
-        .sidebar::-webkit-scrollbar-thumb, .scroll-area::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
-        .dark .sidebar::-webkit-scrollbar-thumb, .dark .scroll-area::-webkit-scrollbar-thumb { background: #4a4b50; }
+        /* 小屏幕时侧边栏不需要滚动，由主容器滚动 */
+        @media (max-width: 767px) {
+            .sidebar {
+                overflow-y: visible;
+                flex-shrink: 0;
+            }
+        }
 
-        .account-mini { padding: 16px; }
+        /* 滚动条美化 */
+        .sidebar::-webkit-scrollbar,
+        .scroll-area::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb,
+        .scroll-area::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+            transition: background 0.3s;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover,
+        .scroll-area::-webkit-scrollbar-thumb:hover {
+            background: #FB7299;
+        }
+
+        .dark .sidebar::-webkit-scrollbar-thumb,
+        .dark .scroll-area::-webkit-scrollbar-thumb {
+            background: #4a4b50;
+        }
+
+        .account-mini {
+            padding: 16px;
+        }
 
         /* 顶部状态条 */
         .top-stat-item {
             padding: 0 24px;
             border-right: 1px solid #e5e7eb;
+            transition: transform 0.2s var(--ease-spring);
         }
-        .dark .top-stat-item { border-color: #3f4045; }
-        .top-stat-item:last-child { border-right: none; }
+
+        .top-stat-item:hover {
+            transform: scale(1.05);
+        }
+
+        .dark .top-stat-item {
+            border-color: #3f4045;
+        }
+
+        .top-stat-item:last-child {
+            border-right: none;
+        }
+
+        /* 统计数字动画 */
+        .stat-number {
+            display: inline-block;
+            transition: transform 0.3s var(--ease-spring), color 0.3s;
+        }
+
+        .stat-number.updating {
+            animation: numberPop 0.4s var(--ease-spring);
+        }
+
+        @keyframes numberPop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+                color: #FB7299;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
 
         /* 群列表容器 */
         .scroll-area {
@@ -92,18 +322,36 @@
             padding: 16px;
         }
 
-        /* 开关美化 */
-        .toggle-switch { position: relative; width: 48px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        /* 开关美化 - 增强弹性动画 */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
         .toggle-slider {
             position: absolute;
             cursor: pointer;
             inset: 0;
             background-color: #d1d5db;
-            transition: 0.3s;
+            transition: background-color 0.35s var(--ease-smooth), box-shadow 0.3s;
             border-radius: 24px;
         }
-        .dark .toggle-slider { background-color: #4a4b50; }
+
+        .toggle-slider:hover {
+            box-shadow: 0 0 0 4px rgba(251, 114, 153, 0.15);
+        }
+
+        .dark .toggle-slider {
+            background-color: #4a4b50;
+        }
+
         .toggle-slider:before {
             position: absolute;
             content: "";
@@ -112,31 +360,818 @@
             left: 3px;
             bottom: 3px;
             background-color: white;
-            transition: 0.3s;
+            transition: transform 0.35s var(--ease-spring), box-shadow 0.3s;
             border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        input:checked + .toggle-slider { background-color: #FB7299; }
-        input:checked + .toggle-slider:before { transform: translateX(24px); }
 
-        /* Toast */
-        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 100; }
-        .toast { padding: 12px 24px; border-radius: 8px; color: white; margin-bottom: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .toggle-slider:active:before {
+            width: 22px;
+        }
 
+        input:checked+.toggle-slider {
+            background-color: #FB7299;
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        input:focus+.toggle-slider {
+            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.3);
+        }
+
+        /* Toast - 增强动画 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .toast {
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 8px;
+            font-size: 14px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            animation: toastIn 0.5s var(--ease-spring) both;
+            backdrop-filter: blur(8px);
+        }
+
+        .toast.hiding {
+            animation: toastOut 0.4s var(--ease-smooth) both;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%) scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%) scale(0.8);
+            }
+        }
+
+        /* 群列表项动画 */
         .group-item {
             display: flex;
             align-items: center;
             padding: 12px;
             border-radius: 10px;
             border: 1px solid #f3f4f6;
-            transition: all 0.2s;
+            transition: all 0.3s var(--ease-spring);
             background: #fff;
+            opacity: 0;
+            animation: groupItemIn 0.4s var(--ease-out-back) both;
         }
+
+        @keyframes groupItemIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         .dark .group-item {
             background: #2a2b2e;
             border-color: #3f4045;
         }
-        .group-item:hover { border-color: #FB7299; box-shadow: 0 2px 8px rgba(251,114,153,0.15); }
+
+        .group-item:hover {
+            border-color: #FB7299;
+            box-shadow: 0 6px 20px rgba(251, 114, 153, 0.2);
+            transform: translateY(-3px) scale(1.01);
+        }
+
+        .group-item:active {
+            transform: translateY(-1px) scale(0.99);
+        }
+
+        /* 群头像动画 */
+        .group-item .group-avatar {
+            transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+        }
+
+        .group-item:hover .group-avatar {
+            transform: scale(1.1) rotate(3deg);
+            box-shadow: 0 4px 12px rgba(251, 114, 153, 0.3);
+        }
+
+        /* 按钮点击效果 */
+        button {
+            transition: transform 0.2s var(--ease-spring), box-shadow 0.2s, background-color 0.3s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* 主要按钮悬停 */
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .btn-primary:hover::after {
+            transform: translateX(100%);
+        }
+
+        /* 刷新按钮旋转 */
+        .refresh-btn svg {
+            transition: transform 0.5s var(--ease-spring);
+        }
+
+        .refresh-btn:hover svg {
+            transform: rotate(180deg);
+        }
+
+        .refresh-btn.spinning svg {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 输入框聚焦动画 */
+        input[type="text"],
+        input[type="number"],
+        select {
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            transform: scale(1.01);
+        }
+
+        /* 搜索框特殊效果 */
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-input-wrapper::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 14px;
+            background: linear-gradient(45deg, #FB7299, #00A1D6, #FB7299);
+            background-size: 200% 200%;
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s;
+        }
+
+        .search-input-wrapper:focus-within::before {
+            opacity: 1;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        /* 用户头像悬停 */
+        #user-avatar {
+            transition: transform 0.4s var(--ease-spring), box-shadow 0.3s;
+        }
+
+        #user-avatar:hover {
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 8px 24px rgba(251, 114, 153, 0.4);
+        }
+
+        /* 等级进度条动画 */
+        #user-level-progress {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #user-level-progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            to {
+                left: 100%;
+            }
+        }
+
+        /* 状态徽章动画 */
+        #status-badge {
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes badgePulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+            }
+        }
+
+        /* 加载动画增强 */
+        .loading-spinner {
+            animation: spinBounce 1s var(--ease-smooth) infinite;
+        }
+
+        @keyframes spinBounce {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+
+            50% {
+                transform: rotate(180deg) scale(1.1);
+            }
+
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+
+        /* 二维码出现动画 */
+        #qrcode-wrapper {
+            animation: qrcodeIn 0.5s var(--ease-spring) both;
+        }
+
+        @keyframes qrcodeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8) rotateY(15deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) rotateY(0deg);
+            }
+        }
+
+        /* 二维码图片悬停 */
+        #qrcode-img {
+            transition: transform 0.4s var(--ease-spring), box-shadow 0.3s;
+        }
+
+        #qrcode-img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 32px rgba(251, 114, 153, 0.3);
+        }
+
+        /* VIP 标签闪烁 */
+        #user-vip {
+            animation: vipGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes vipGlow {
+            from {
+                box-shadow: 0 0 4px rgba(251, 114, 153, 0.5);
+            }
+
+            to {
+                box-shadow: 0 0 12px rgba(251, 114, 153, 0.8);
+            }
+        }
+
+        /* 空状态动画 */
+        #groups-empty {
+            animation: emptyBounce 0.6s var(--ease-spring);
+        }
+
+        @keyframes emptyBounce {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            60% {
+                transform: scale(1.03);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* ========== SVG 图标动效 ========== */
+
+        /* 通用图标样式 */
+        .icon-section {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s var(--ease-spring);
+        }
+
+        /* 锁图标动效 */
+        .icon-lock {
+            transition: transform 0.4s var(--ease-spring);
+        }
+
+        .glass-card:hover .icon-lock {
+            animation: lockWiggle 0.6s var(--ease-spring);
+        }
+
+        @keyframes lockWiggle {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(-10deg);
+            }
+
+            75% {
+                transform: rotate(10deg);
+            }
+        }
+
+        /* 齿轮图标旋转 */
+        .icon-gear {
+            transition: transform 0.6s var(--ease-smooth);
+        }
+
+        .glass-card:hover .icon-gear {
+            transform: rotate(90deg);
+        }
+
+        /* 群组图标动效 */
+        .icon-groups {
+            transition: transform 0.3s var(--ease-spring);
+        }
+
+        .glass-card:hover .icon-groups {
+            animation: groupsBounce 0.5s var(--ease-spring);
+        }
+
+        @keyframes groupsBounce {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+        }
+
+        /* 搜索图标动效 */
+        .icon-search {
+            transition: all 0.3s var(--ease-spring);
+        }
+
+        .search-input-wrapper:focus-within .icon-search {
+            transform: scale(1.15) rotate(15deg);
+            color: #FB7299;
+        }
+
+        /* 空状态叶子飘动 */
+        .icon-empty {
+            animation: leafFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes leafFloat {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            25% {
+                transform: translateY(-8px) rotate(5deg);
+            }
+
+            50% {
+                transform: translateY(-4px) rotate(-3deg);
+            }
+
+            75% {
+                transform: translateY(-10px) rotate(3deg);
+            }
+        }
+
+        /* 选项图标悬浮 */
+        .select-option svg {
+            transition: transform 0.2s var(--ease-spring);
+        }
+
+        .select-option:hover svg {
+            transform: scale(1.2);
+        }
+
+        /* 页面淡入 */
+        .app-layout {
+            animation: pageIn 0.8s var(--ease-smooth) both;
+        }
+
+        @keyframes pageIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* 悬浮卡片阴影变化 */
+        .sidebar .glass-card:hover {
+            transform: translateY(-4px);
+        }
+
+        /* 登录区域切换动画 */
+        #login-section,
+        #logged-in-section {
+            transition: opacity 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
+        }
+
+        #login-section.hidden,
+        #logged-in-section.hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        #login-section:not(.hidden),
+        #logged-in-section:not(.hidden) {
+            animation: sectionIn 0.5s var(--ease-spring) both;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* 按钮波纹效果 */
+        .ripple-btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ripple-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s, opacity 0.6s;
+            opacity: 0;
+        }
+
+        .ripple-btn:active::before {
+            width: 300px;
+            height: 300px;
+            opacity: 1;
+            transition: 0s;
+        }
+
+        /* 快速操作按钮动画 */
+        .quick-action-btn {
+            transition: all 0.3s var(--ease-spring);
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* 状态徽章切换动画 */
+        #status-badge {
+            transition: all 0.4s var(--ease-spring);
+        }
+
+        #status-badge.status-running {
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+
+        #status-badge.status-paused {
+            animation: none;
+        }
+
+        /* 滚动容器平滑滚动 */
+        .scroll-area,
+        .sidebar {
+            scroll-behavior: smooth;
+        }
+
+        /* 输入框占位符动画 */
+        input::placeholder {
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        input:focus::placeholder {
+            opacity: 0.5;
+            transform: translateX(5px);
+        }
+
+        /* 卡片标题栏动画 */
+        .glass-card>div:first-child {
+            transition: background-color 0.3s;
+        }
+
+        .glass-card:hover>div:first-child {
+            background-color: rgba(251, 114, 153, 0.05);
+        }
+
+        .dark .glass-card:hover>div:first-child {
+            background-color: rgba(251, 114, 153, 0.1);
+        }
+
+        /* 数据统计区域 hover 高亮 */
+        .top-stat-item span:last-child {
+            transition: text-shadow 0.3s;
+        }
+
+        .top-stat-item:hover span:last-child {
+            text-shadow: 0 0 20px rgba(251, 114, 153, 0.5);
+        }
+
+        /* 一键全开/关按钮 */
+        .bulk-action-btn {
+            transition: all 0.25s var(--ease-spring);
+        }
+
+        .bulk-action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .bulk-action-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ========== 自定义表单组件优化 ========== */
+
+        /* 数字输入框容器 */
+        .number-input-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .dark .number-input-wrapper {
+            background-color: #374151;
+            border-color: #4b5563;
+        }
+
+        .number-input-wrapper:focus-within {
+            border-color: #FB7299;
+            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.1);
+            background-color: white;
+        }
+
+        .dark .number-input-wrapper:focus-within {
+            background-color: #4b5563;
+            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.2);
+        }
+
+        /* 数字加减按钮 */
+        .number-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            color: #6b7280;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .dark .number-btn {
+            color: #9ca3af;
+        }
+
+        .number-btn:hover {
+            background-color: rgba(251, 114, 153, 0.1);
+            color: #FB7299;
+        }
+
+        .number-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* 数字输入框本体 */
+        .number-input-field {
+            flex: 1;
+            text-align: center;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 0.875rem;
+            color: #1f2937;
+            -moz-appearance: textfield;
+            font-weight: 500;
+        }
+
+        .dark .number-input-field {
+            color: #f3f4f6;
+        }
+
+        .number-input-field::-webkit-inner-spin-button,
+        .number-input-field::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* 自定义下拉选择框 */
+        .custom-select {
+            position: relative;
+            width: 100%;
+            user-select: none;
+        }
+
+        /* 触发器 */
+        .select-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            color: #1f2937;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .dark .select-trigger {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+
+        .select-trigger:hover {
+            border-color: #FB7299;
+            background-color: white;
+        }
+
+        .dark .select-trigger:hover {
+            background-color: #4b5563;
+        }
+
+        .custom-select.active .select-trigger {
+            border-color: #FB7299;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.1);
+        }
+
+        .dark .custom-select.active .select-trigger {
+            background-color: #4b5563;
+            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.2);
+        }
+
+        /* 选项列表 */
+        .select-options {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.98);
+            transform-origin: top center;
+            transition: all 0.3s var(--ease-spring);
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .dark .select-options {
+            background-color: #2a2b2e;
+            border-color: #3f4045;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        .custom-select.active .select-options {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        /* 选项目标志 */
+        .select-option {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .select-option:last-child {
+            border-bottom: none;
+        }
+
+        .dark .select-option {
+            color: #d1d5db;
+            border-color: #37383c;
+        }
+
+        .select-option:hover {
+            background-color: #fff0f6;
+            /* pink-50 */
+            color: #FB7299;
+        }
+
+        .dark .select-option:hover {
+            background-color: #3f4045;
+        }
+
+        .select-option.selected {
+            color: #FB7299;
+            font-weight: 600;
+            background-color: rgba(251, 114, 153, 0.08);
+        }
+
+        /* 箭头动画 */
+        .arrow-icon {
+            transition: transform 0.4s var(--ease-spring);
+        }
+
+        .custom-select.active .arrow-icon {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 
@@ -145,21 +1180,37 @@
 
     <div class="app-layout">
         <!-- 顶部通栏 -->
-        <header class="bg-white dark:bg-bili-dark border-b border-gray-200 dark:border-gray-700 px-8 py-4 flex items-center justify-between shadow-sm z-10 transition-colors">
+        <header
+            class="bg-white dark:bg-bili-dark border-b border-gray-200 dark:border-gray-700 px-8 py-4 flex items-center justify-between shadow-sm z-10 transition-colors">
             <div class="flex items-center gap-4">
                 <svg class="w-8 h-8" viewBox="0 0 1071 1024" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M887.365188 952.783894H184.455499C82.758914 952.783894 0 876.72402 0 783.272408V336.111466c0-93.477378 82.758914-169.537251 184.455499-169.537252h704.043373c51.969094 0 101.67082 20.225949 136.377002 55.498973A159.256801 159.256801 0 0 1 1071.846453 336.420652V783.272408c0 93.451613-82.758914 169.511486-184.481265 169.511486zM184.455499 251.600495c-54.829069 0-99.429218 37.901109-99.429218 84.510971V783.272408c0 46.609861 44.600149 84.51097 99.429218 84.51097H887.365188c54.829069 0 99.429218-37.901109 99.429218-84.51097V335.415796a74.539706 74.539706 0 0 0-22.570613-53.72115c-18.808844-19.11803-46.377972-30.09415-75.750687-30.094151z" fill="#FB7299"/>
-                    <path d="M397.794168 495.316736L219.651226 535.923226a36.355177 36.355177 0 0 1-15.175903-71.112889l178.142942-40.55496a35.8141 35.8141 0 0 1 43.131513 27.955611c4.302845 19.169562-8.786049 38.854434-27.95561 43.157279zM674.052285 495.316736c-19.169562-4.302845-32.258456-23.987717-27.955611-43.157279a35.8141 35.8141 0 0 1 43.131514-27.955611l178.142941 40.55496a36.355177 36.355177 0 0 1-15.175902 71.112889l-178.142942-40.554959zM268.811876 1023.999845a56.684187 56.684187 0 0 1-56.684187-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015zM803.034577 1023.999845a56.684187 56.684187 0 0 1-56.813015-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015z" fill="#FB7299"/>
-                    <path d="M248.918821 42.946487m26.538343-29.671097l0 0q26.538343-29.671097 56.20944-3.132755l185.900469 166.272595q29.671097 26.538343 3.132754 56.20944l0 0q-26.538343 29.671097-56.20944 3.132755l-185.900468-166.272595q-29.671097-26.538343-3.132755-56.20944Z" fill="#FB7299"/>
-                    <path d="M577.629382 262.330313m-26.538343-29.671098l0 0q-26.538343-29.671097 3.132755-56.20944l185.900468-166.272595q29.671097-26.538343 56.209441 3.132755l0 0q26.538343 29.671097-3.132755 56.20944l-185.900468 166.272595q-29.671097 26.538343-56.209441-3.132755Z" fill="#FB7299"/>
-                    <path d="M595.621982 756.373184a39.447041 39.447041 0 0 1-30.738289-14.686357L533.346672 702.677799l-32.438814 38.467951a39.730462 39.730462 0 0 1-55.473207 5.153108l-44.316729-36.535535a23.188986 23.188986 0 1 1 29.501543-35.762569l39.163621 32.258455 33.495202-39.601634a39.6274 39.6274 0 0 1 61.038563 0.566842l32.722236 40.323069 45.424646-33.933215A23.188986 23.188986 0 1 1 669.904033 710.665117l-50.655051 37.798047a39.369745 39.369745 0 0 1-23.627 7.91002z" fill="#FB7299"/>
+                    <path
+                        d="M887.365188 952.783894H184.455499C82.758914 952.783894 0 876.72402 0 783.272408V336.111466c0-93.477378 82.758914-169.537251 184.455499-169.537252h704.043373c51.969094 0 101.67082 20.225949 136.377002 55.498973A159.256801 159.256801 0 0 1 1071.846453 336.420652V783.272408c0 93.451613-82.758914 169.511486-184.481265 169.511486zM184.455499 251.600495c-54.829069 0-99.429218 37.901109-99.429218 84.510971V783.272408c0 46.609861 44.600149 84.51097 99.429218 84.51097H887.365188c54.829069 0 99.429218-37.901109 99.429218-84.51097V335.415796a74.539706 74.539706 0 0 0-22.570613-53.72115c-18.808844-19.11803-46.377972-30.09415-75.750687-30.094151z"
+                        fill="#FB7299" />
+                    <path
+                        d="M397.794168 495.316736L219.651226 535.923226a36.355177 36.355177 0 0 1-15.175903-71.112889l178.142942-40.55496a35.8141 35.8141 0 0 1 43.131513 27.955611c4.302845 19.169562-8.786049 38.854434-27.95561 43.157279zM674.052285 495.316736c-19.169562-4.302845-32.258456-23.987717-27.955611-43.157279a35.8141 35.8141 0 0 1 43.131514-27.955611l178.142941 40.55496a36.355177 36.355177 0 0 1-15.175902 71.112889l-178.142942-40.554959zM268.811876 1023.999845a56.684187 56.684187 0 0 1-56.684187-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015zM803.034577 1023.999845a56.684187 56.684187 0 0 1-56.813015-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015z"
+                        fill="#FB7299" />
+                    <path
+                        d="M248.918821 42.946487m26.538343-29.671097l0 0q26.538343-29.671097 56.20944-3.132755l185.900469 166.272595q29.671097 26.538343 3.132754 56.20944l0 0q-26.538343 29.671097-56.20944 3.132755l-185.900468-166.272595q-29.671097-26.538343-3.132755-56.20944Z"
+                        fill="#FB7299" />
+                    <path
+                        d="M577.629382 262.330313m-26.538343-29.671098l0 0q-26.538343-29.671097 3.132755-56.20944l185.900468-166.272595q29.671097-26.538343 56.209441 3.132755l0 0q26.538343 29.671097-3.132755 56.20944l-185.900468 166.272595q-29.671097 26.538343-56.209441-3.132755Z"
+                        fill="#FB7299" />
+                    <path
+                        d="M595.621982 756.373184a39.447041 39.447041 0 0 1-30.738289-14.686357L533.346672 702.677799l-32.438814 38.467951a39.730462 39.730462 0 0 1-55.473207 5.153108l-44.316729-36.535535a23.188986 23.188986 0 1 1 29.501543-35.762569l39.163621 32.258455 33.495202-39.601634a39.6274 39.6274 0 0 1 61.038563 0.566842l32.722236 40.323069 45.424646-33.933215A23.188986 23.188986 0 1 1 669.904033 710.665117l-50.655051 37.798047a39.369745 39.369745 0 0 1-23.627 7.91002z"
+                        fill="#FB7299" />
                 </svg>
                 <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">B站视频解析 · 控制中心</h1>
-                <span id="status-badge" class="ml-2 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">运行中</span>
-                <button class="ml-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors group" title="刷新数据" onclick="refreshAll()">
-                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-bili-pink transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
+                <span id="status-badge"
+                    class="ml-2 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">运行中</span>
+                <button id="refresh-btn"
+                    class="refresh-btn ml-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors group"
+                    title="刷新数据" onclick="refreshAll()">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-bili-pink transition-colors"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                        <path d="M21 3v5h-5" />
                     </svg>
                 </button>
             </div>
@@ -167,19 +1218,20 @@
             <div class="flex items-center h-10">
                 <div class="top-stat-item flex flex-col items-center">
                     <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">今日解析</span>
-                    <span id="stats-today" class="text-lg font-bold text-bili-pink">0</span>
+                    <span id="stats-today" class="stat-number text-lg font-bold text-bili-pink">0</span>
                 </div>
                 <div class="top-stat-item flex flex-col items-center">
                     <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">累计解析</span>
-                    <span id="stats-total" class="text-lg font-bold text-bili-pink">0</span>
+                    <span id="stats-total" class="stat-number text-lg font-bold text-bili-pink">0</span>
                 </div>
                 <div class="top-stat-item flex flex-col items-center">
                     <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">活跃群聊</span>
-                    <span id="enabled-groups" class="text-lg font-bold text-bili-pink">0</span>
+                    <span id="enabled-groups" class="stat-number text-lg font-bold text-bili-pink">0</span>
                 </div>
                 <div class="top-stat-item flex flex-col items-center border-none">
                     <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">运行时长</span>
-                    <span id="uptime" class="text-lg font-bold text-gray-700 dark:text-gray-300 min-w-[5em] text-center" style="font-variant-numeric: tabular-nums;">--</span>
+                    <span id="uptime" class="text-lg font-bold text-gray-700 dark:text-gray-300 min-w-[5em] text-center"
+                        style="font-variant-numeric: tabular-nums;">--</span>
                 </div>
             </div>
         </header>
@@ -189,74 +1241,114 @@
             <aside class="sidebar">
                 <!-- 账号状态 -->
                 <div class="glass-card shadow-sm">
-                    <div class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 font-bold text-base text-gray-700 dark:text-gray-200 bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
-                        <span>🔐</span> 登录信息
+                    <div
+                        class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 font-bold text-base text-gray-700 dark:text-gray-200 bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
+                        <span class="icon-section">
+                            <svg class="icon-lock w-5 h-5 text-bili-pink" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                <circle cx="12" cy="16" r="1"></circle>
+                            </svg>
+                        </span> 登录信息
                     </div>
-                    
-                    <div id="login-loading" class="p-8 text-center text-sm text-gray-400 dark:text-gray-500">正在检查登录状态...</div>
+
+                    <div id="login-loading" class="p-8 text-center text-sm text-gray-400 dark:text-gray-500">正在检查登录状态...
+                    </div>
 
                     <!-- 未登录 -->
                     <div id="login-section" class="hidden p-6 text-center">
                         <div id="qrcode-placeholder" class="mb-4">
-                            <button class="w-full py-3 bg-bili-pink text-white rounded-xl text-sm font-bold hover:bg-pink-600 transition shadow-md shadow-pink-100 dark:shadow-pink-900/20" onclick="generateQrCode()">
+                            <button
+                                class="btn-primary w-full py-3 bg-bili-pink text-white rounded-xl text-sm font-bold hover:bg-pink-600 transition shadow-md shadow-pink-100 dark:shadow-pink-900/20"
+                                onclick="generateQrCode()">
                                 立即扫码登录
                             </button>
                         </div>
                         <div id="qrcode-wrapper" class="hidden">
-                            <img id="qrcode-img" class="w-40 h-40 mx-auto border-4 border-white dark:border-gray-700 shadow-sm rounded-xl mb-3" src="">
-                            <div id="qrcode-status" class="text-xs text-gray-500 dark:text-gray-400 mb-3">请使用 Bilibili App 扫码</div>
-                            <button class="text-sm text-bili-pink font-medium hover:underline" onclick="generateQrCode()">刷新二维码</button>
+                            <img id="qrcode-img"
+                                class="w-40 h-40 mx-auto border-4 border-white dark:border-gray-700 shadow-sm rounded-xl mb-3"
+                                src="">
+                            <div id="qrcode-status" class="text-xs text-gray-500 dark:text-gray-400 mb-3">请使用 Bilibili
+                                App 扫码</div>
+                            <button class="text-sm text-bili-pink font-medium hover:underline"
+                                onclick="generateQrCode()">刷新二维码</button>
                         </div>
                     </div>
 
                     <!-- 已登录 -->
                     <div id="logged-in-section" class="hidden account-mini">
                         <div class="flex items-center gap-4" style="margin-bottom: 1rem;">
-                            <img id="user-avatar" class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-600 ring-2 ring-bili-pink shadow-sm" src="">
+                            <img id="user-avatar"
+                                class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-600 ring-2 ring-bili-pink shadow-sm"
+                                src="">
                             <div class="min-w-0">
                                 <div class="flex items-center gap-2">
-                                    <span id="user-name" class="font-bold text-base text-gray-800 dark:text-gray-100 truncate">--</span>
-                                    <span id="user-vip" class="text-[10px] bg-bili-pink text-white px-1.5 py-0.5 rounded font-bold hidden">VIP</span>
+                                    <span id="user-name"
+                                        class="font-bold text-base text-gray-800 dark:text-gray-100 truncate">--</span>
+                                    <span id="user-vip"
+                                        class="text-[10px] bg-bili-pink text-white px-1.5 py-0.5 rounded font-bold hidden">VIP</span>
                                 </div>
                                 <div id="user-uid" class="text-xs text-gray-400 dark:text-gray-500 mt-1">UID: --</div>
                             </div>
                         </div>
-                        
+
                         <div class="space-y-4">
                             <div>
-                                <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-2 font-medium">
-                                    <span class="text-bili-pink font-bold italic">LV<span id="user-level">0</span></span>
-                                    <span><span id="user-exp-current">0</span> / <span id="user-exp-next">0</span></span>
+                                <div
+                                    class="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-2 font-medium">
+                                    <span class="text-bili-pink font-bold italic">LV<span
+                                            id="user-level">0</span></span>
+                                    <span><span id="user-exp-current">0</span> / <span
+                                            id="user-exp-next">0</span></span>
                                 </div>
                                 <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
-                                    <div id="user-level-progress" class="h-full bg-bili-pink transition-all duration-700" style="width: 0%"></div>
+                                    <div id="user-level-progress"
+                                        class="h-full bg-bili-pink transition-all duration-700" style="width: 0%"></div>
                                 </div>
                             </div>
-                            
-                            <div class="grid grid-cols-3 gap-2 border-t border-b border-gray-50 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30 rounded-lg" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
+
+                            <div class="grid grid-cols-3 gap-2 border-t border-b border-gray-50 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30 rounded-lg"
+                                style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
                                 <div class="text-center">
                                     <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">硬币</div>
-                                    <div id="user-money" class="text-sm font-bold text-gray-700 dark:text-gray-200">--</div>
+                                    <div id="user-money" class="text-sm font-bold text-gray-700 dark:text-gray-200">--
+                                    </div>
                                 </div>
                                 <div class="text-center border-l border-r border-gray-100 dark:border-gray-700">
                                     <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">粉丝</div>
-                                    <div id="user-follower" class="text-sm font-bold text-gray-700 dark:text-gray-200">--</div>
+                                    <div id="user-follower" class="text-sm font-bold text-gray-700 dark:text-gray-200">
+                                        --</div>
                                 </div>
                                 <div class="text-center">
                                     <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">节操</div>
-                                    <div id="user-moral" class="text-sm font-bold text-gray-700 dark:text-gray-200">--</div>
+                                    <div id="user-moral" class="text-sm font-bold text-gray-700 dark:text-gray-200">--
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <button class="w-full py-2.5 text-xs text-red-500 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition border border-red-100 dark:border-red-900/50 mt-2" onclick="logout()">退出登录</button>
+
+                            <button
+                                class="w-full py-2.5 text-xs text-red-500 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition border border-red-100 dark:border-red-900/50 mt-2"
+                                onclick="logout()">退出登录</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- 插件设置 -->
                 <div class="glass-card shadow-sm">
-                    <div class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 font-bold text-base text-gray-700 dark:text-gray-200 bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
-                        <span>⚙️</span> 功能配置
+                    <div
+                        class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 font-bold text-base text-gray-700 dark:text-gray-200 bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
+                        <span class="icon-section">
+                            <svg class="icon-gear w-5 h-5 text-bili-pink" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path
+                                    d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42">
+                                </path>
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14" opacity="0.3">
+                                </path>
+                            </svg>
+                        </span> 功能配置
                     </div>
                     <div class="p-5 space-y-6">
                         <div class="flex items-center justify-between">
@@ -270,17 +1362,67 @@
                             </label>
                         </div>
 
-                        <div>
+                        <div class="relative z-20">
                             <div class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">默认发送模式</div>
-                            <select id="send-mode" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-100 outline-none focus:border-bili-pink focus:bg-white dark:focus:bg-gray-600 transition" onchange="updateConfig()">
-                                <option value="info-only">仅发送视频概览卡片</option>
-                                <option value="with-video">发送概览卡片 + 视频源文件</option>
-                            </select>
+
+                            <!-- 自定义下拉框 -->
+                            <div class="custom-select" id="send-mode-select">
+                                <div class="select-trigger" onclick="toggleSelect('send-mode-select')">
+                                    <span class="selected-value">仅发送视频概览卡片</span>
+                                    <svg class="w-4 h-4 text-gray-400 arrow-icon" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                                <div class="select-options">
+                                    <div class="select-option" data-value="info-only"
+                                        onclick="selectOption('send-mode-select', 'info-only', '仅发送视频概览卡片')">
+                                        <svg class="w-5 h-5 text-bili-pink flex-shrink-0" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <path d="M7 7h10M7 12h10M7 17h6"></path>
+                                        </svg>
+                                        <span>仅发送视频概览卡片</span>
+                                    </div>
+                                    <div class="select-option" data-value="with-video"
+                                        onclick="selectOption('send-mode-select', 'with-video', '发送概览卡片 + 视频源文件')">
+                                        <svg class="w-5 h-5 text-bili-pink flex-shrink-0" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                                            <polygon points="10,8 16,12 10,16" fill="currentColor" opacity="0.8">
+                                            </polygon>
+                                        </svg>
+                                        <span>发送概览卡片 + 视频源文件</span>
+                                    </div>
+                                </div>
+                                <select id="send-mode" class="hidden" onchange="updateConfig()">
+                                    <option value="info-only">仅发送视频概览卡片</option>
+                                    <option value="with-video">发送概览卡片 + 视频源文件</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div>
                             <div class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">单视频大小阈值 (MB)</div>
-                            <input type="number" id="max-video-size" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-100 outline-none focus:border-bili-pink focus:bg-white dark:focus:bg-gray-600 transition" min="1" max="1000" onchange="updateConfig()">
+                            <div class="number-input-wrapper">
+                                <div class="number-btn" onclick="adjustNumber('max-video-size', -10)">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M20 12H4"></path>
+                                    </svg>
+                                </div>
+                                <input type="number" id="max-video-size" class="number-input-field" value="100" min="1"
+                                    max="1000" onchange="updateConfig()" onkeydown="checkNumberInput(event)">
+                                <div class="number-btn" onclick="adjustNumber('max-video-size', 10)">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </div>
+                            </div>
                             <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-2">超过此大小的视频将只发送信息卡片</p>
                         </div>
                     </div>
@@ -290,23 +1432,49 @@
 
             <!-- 右侧主区域 (75%) -->
             <section class="glass-card overflow-hidden shadow-sm">
-                <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-bili-dark sticky top-0 z-10 transition-colors">
+                <div
+                    class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-white dark:bg-bili-dark sticky top-0 z-10 transition-colors">
                     <div class="flex items-center gap-3">
-                        <span class="text-xl">👥</span>
+                        <span class="icon-section">
+                            <svg class="icon-groups w-6 h-6 text-bili-pink" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
+                                <circle cx="17" cy="7" r="3" opacity="0.6"></circle>
+                                <path d="M21 21v-2a3 3 0 0 0-3-3h-1" opacity="0.6"></path>
+                            </svg>
+                        </span>
                         <div class="flex flex-col">
-                            <span class="font-bold text-lg text-gray-800 dark:text-gray-100 tracking-tight">群聊解析权限管理</span>
-                            <span id="total-groups" class="text-xs text-gray-400 dark:text-gray-500 font-normal">共计扫描到 0 个群聊</span>
+                            <span
+                                class="font-bold text-base sm:text-lg text-gray-800 dark:text-gray-100 tracking-tight">群聊解析权限管理</span>
+                            <span id="total-groups" class="text-xs text-gray-400 dark:text-gray-500 font-normal">共计扫描到 0
+                                个群聊</span>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs">🔍</span>
-                            <input type="text" id="group-search" class="pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-100 w-64 outline-none focus:bg-white dark:focus:bg-gray-600 focus:border-bili-pink focus:ring-2 focus:ring-pink-50 dark:focus:ring-pink-900/30 transition-all placeholder-gray-400 dark:placeholder-gray-500" placeholder="输入群名或群号搜索..." oninput="filterGroups()">
+                    <div
+                        class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                        <div class="search-input-wrapper relative flex-1 sm:flex-none">
+                            <span
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 transition-all duration-300"
+                                id="search-icon">
+                                <svg class="icon-search w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="M21 21l-4.35-4.35"></path>
+                                </svg>
+                            </span>
+                            <input type="text" id="group-search"
+                                class="w-full sm:w-48 lg:w-64 pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-100 outline-none focus:bg-white dark:focus:bg-gray-600 focus:border-bili-pink focus:ring-2 focus:ring-pink-50 dark:focus:ring-pink-900/30 transition-all placeholder-gray-400 dark:placeholder-gray-500"
+                                placeholder="输入群名或群号搜索..." oninput="filterGroups()">
                         </div>
-                        <div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-600 mx-1"></div>
-                        <div class="flex gap-2">
-                            <button class="px-3 py-1.5 text-xs text-bili-pink font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition" onclick="toggleAllGroups(true)">一键全开</button>
-                            <button class="px-3 py-1.5 text-xs text-gray-400 dark:text-gray-500 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition" onclick="toggleAllGroups(false)">一键全关</button>
+                        <div class="hidden sm:block h-6 w-[1px] bg-gray-200 dark:bg-gray-600 mx-1"></div>
+                        <div class="flex gap-2 justify-end">
+                            <button
+                                class="bulk-action-btn px-3 py-1.5 text-xs text-bili-pink font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition"
+                                onclick="toggleAllGroups(true)">一键全开</button>
+                            <button
+                                class="bulk-action-btn px-3 py-1.5 text-xs text-gray-400 dark:text-gray-500 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                                onclick="toggleAllGroups(false)">一键全关</button>
                         </div>
                     </div>
                 </div>
@@ -314,18 +1482,34 @@
                 <div class="scroll-area bg-gray-50/30 dark:bg-gray-800/30" id="groups-scroll">
                     <!-- 加载中 -->
                     <div id="groups-loading" class="py-32 text-center">
-                        <div class="inline-block w-8 h-8 border-4 border-bili-pink border-t-transparent rounded-full animate-spin"></div>
+                        <div
+                            class="loading-spinner inline-block w-8 h-8 border-4 border-bili-pink border-t-transparent rounded-full">
+                        </div>
                         <div class="mt-4 text-sm text-gray-400 dark:text-gray-500 font-medium">正在拉取群组列表...</div>
                     </div>
 
                     <!-- 列表容器 -->
-                    <div id="groups-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 hidden">
+                    <div id="groups-container"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 hidden">
                         <!-- 动态生成 -->
                     </div>
 
                     <!-- 空状态 -->
                     <div id="groups-empty" class="py-32 text-center hidden">
-                        <div class="text-5xl mb-4 grayscale">🍃</div>
+                        <div class="mb-4 flex justify-center">
+                            <svg class="icon-empty w-16 h-16 text-gray-300 dark:text-gray-600" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.82-.13 2.67-.36" opacity="0.3">
+                                </path>
+                                <path d="M12 22c5.5 0 10-4.5 10-10 0-1.5-.33-2.92-.92-4.2"></path>
+                                <path d="M8 14s1.5 2 4 2c.8 0 1.5-.2 2.1-.5" opacity="0.5"></path>
+                                <path d="M17 2.5c-2 2-2.5 5-1 7.5 1.5 2.5 4 3 6 2" stroke-dasharray="2 2"></path>
+                                <path d="M22 7c-2 .5-3.5 2-3.5 4"></path>
+                                <circle cx="9" cy="9" r="1" fill="currentColor"></circle>
+                                <circle cx="15" cy="9" r="1" fill="currentColor"></circle>
+                            </svg>
+                        </div>
                         <div class="text-base font-bold text-gray-400 dark:text-gray-500">未找到匹配的群聊</div>
                         <p class="text-sm text-gray-300 dark:text-gray-600 mt-1">请尝试更换搜索关键词</p>
                     </div>
@@ -343,14 +1527,14 @@
         let pollTimer = null;
         let countdownTimer = null;
         let remainingTime = 180;
-        
+
         // 运行时长相关变量
         let serverUptimeMs = 0;
         let uptimeTimerId = null;
         let lastFetchTime = 0;
 
         function authHeaders(h = {}) { if (token) h['Authorization'] = 'Bearer ' + token; return h; }
-        
+
         // 格式化运行时长
         function formatUptime(ms) {
             const seconds = Math.floor(ms / 1000);
@@ -373,7 +1557,7 @@
                 return `${seconds}秒`;
             }
         }
-        
+
         // 更新运行时长显示
         function updateUptimeDisplay() {
             const uptimeEl = document.getElementById('uptime');
@@ -383,7 +1567,7 @@
                 uptimeEl.textContent = formatUptime(currentUptime);
             }
         }
-        
+
         // 启动运行时长定时器
         function startUptimeTimer() {
             if (uptimeTimerId) clearInterval(uptimeTimerId);
@@ -396,19 +1580,19 @@
             try {
                 if (window.parent && window.parent.__PLUGIN_NAME__) tries.push(window.parent.__PLUGIN_NAME__);
             } catch (e) { }
-            
+
             const extMatch = location.pathname.match(/\/ext\/([^\/]+)/);
             if (extMatch) tries.unshift(extMatch[1]);
-            
+
             // 默认兜底
             tries.push('napcat-plugin-bilibili');
-            
+
             for (const name of [...new Set(tries.filter(Boolean))]) {
                 const base = '/api/Plugin/ext/' + name;
                 try {
                     const r = await fetch(base + ROUTE_PREFIX + '/status', { headers: authHeaders() });
                     if (r.ok) return base;
-                } catch (e) {}
+                } catch (e) { }
             }
             return '/api/Plugin/ext/' + (window.__PLUGIN_NAME__ || 'napcat-plugin-bilibili');
         }
@@ -438,10 +1622,20 @@
             t.textContent = msg;
             c.appendChild(t);
             setTimeout(() => {
-                t.style.transform = 'translateX(120%)';
-                t.style.opacity = '0';
-                setTimeout(() => t.remove(), 300);
+                t.classList.add('hiding');
+                setTimeout(() => t.remove(), 400);
             }, 3000);
+        }
+
+        // 统计数字更新动画
+        function animateStatNumber(elementId, newValue) {
+            const el = document.getElementById(elementId);
+            const oldValue = el.textContent;
+            if (oldValue !== String(newValue)) {
+                el.textContent = newValue;
+                el.classList.add('updating');
+                setTimeout(() => el.classList.remove('updating'), 400);
+            }
         }
 
         async function loadStatus() {
@@ -450,14 +1644,13 @@
                 if (res.code === 0) {
                     const { config, uptime, uptimeFormatted, stats } = res.data;
                     globalEnabled = config.enabled !== false;
-                    
+
                     const badge = document.getElementById('status-badge');
-                    const isDark = document.documentElement.classList.contains('dark');
-                    badge.className = `ml-2 px-3 py-1 rounded-full text-xs font-bold border ${globalEnabled 
-                        ? 'bg-green-100 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' 
-                        : 'bg-red-100 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'}`;
+                    badge.className = `ml-2 px-3 py-1 rounded-full text-xs font-bold border ${globalEnabled
+                        ? 'bg-green-100 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800 status-running'
+                        : 'bg-red-100 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 status-paused'}`;
                     badge.textContent = globalEnabled ? '运行中' : '已暂停';
-                    
+
                     // 使用毫秒数实时更新运行时长
                     if (typeof uptime === 'number' && uptime > 0) {
                         serverUptimeMs = uptime;
@@ -467,17 +1660,34 @@
                     } else {
                         document.getElementById('uptime').textContent = uptimeFormatted || '--';
                     }
-                    
+
                     document.getElementById('global-toggle').checked = globalEnabled;
-                    document.getElementById('send-mode').value = config.sendMode || 'info-only';
+
+                    // 更新自定义下拉框状态
+                    const sendMode = config.sendMode || 'info-only';
+                    const modeSelect = document.getElementById('send-mode');
+                    if (modeSelect) {
+                        modeSelect.value = sendMode;
+                        // 同步 UI 状态
+                        const wrapper = document.getElementById('send-mode-select');
+                        if (wrapper) {
+                            const option = wrapper.querySelector(`.select-option[data-value="${sendMode}"]`);
+                            if (option) {
+                                wrapper.querySelector('.selected-value').textContent = option.querySelector('span:last-child').textContent;
+                                wrapper.querySelectorAll('.select-option').forEach(o => o.classList.remove('selected'));
+                                option.classList.add('selected');
+                            }
+                        }
+                    }
+
                     document.getElementById('max-video-size').value = config.maxVideoSizeMB || 100;
-                    
+
                     if (stats) {
-                        document.getElementById('stats-today').textContent = stats.todayParsed || 0;
-                        document.getElementById('stats-total').textContent = stats.totalParsed || 0;
+                        animateStatNumber('stats-today', stats.todayParsed || 0);
+                        animateStatNumber('stats-total', stats.totalParsed || 0);
                     }
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
 
         async function loadGroups() {
@@ -486,7 +1696,7 @@
                 if (res.code === 0) {
                     groupsData = res.data || [];
                     document.getElementById('total-groups').textContent = `共计扫描到 ${groupsData.length} 个群聊`;
-                    document.getElementById('enabled-groups').textContent = groupsData.filter(g => g.biliEnabled !== false).length;
+                    animateStatNumber('enabled-groups', groupsData.filter(g => g.biliEnabled !== false).length);
                     renderGroups();
                 }
             } catch (e) {
@@ -507,11 +1717,13 @@
             }
 
             empty.classList.add('hidden'); container.classList.remove('hidden');
-            container.innerHTML = filtered.map(g => {
+            container.innerHTML = filtered.map((g, index) => {
                 const avatarUrl = `http://p.qlogo.cn/gh/${g.group_id}/${g.group_id}/100/`;
+                // 交错动画延迟，最多延迟 0.5s
+                const delay = Math.min(index * 0.03, 0.5);
                 return `
-                <div class="group-item shadow-sm">
-                    <div class="w-10 h-10 rounded-lg bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center text-sm font-bold text-bili-pink mr-4 flex-shrink-0 border border-pink-100 dark:border-pink-800/30 overflow-hidden">
+                <div class="group-item shadow-sm" style="animation-delay: ${delay}s;">
+                    <div class="group-avatar w-10 h-10 rounded-lg bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center text-sm font-bold text-bili-pink mr-4 flex-shrink-0 border border-pink-100 dark:border-pink-800/30 overflow-hidden">
                         <img src="${avatarUrl}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='${(g.group_name || 'G')[0]}';">
                     </div>
                     <div class="min-w-0 flex-1 mr-3">
@@ -545,7 +1757,7 @@
             try {
                 const res = await authFetch('/config', { method: 'POST', body: JSON.stringify({ sendMode, maxVideoSizeMB }) });
                 if (res.code === 0) showToast('设置保存成功', 'success');
-            } catch (e) {}
+            } catch (e) { }
         }
 
         async function toggleGroup(groupId, enabled) {
@@ -554,12 +1766,12 @@
                 if (res.code === 0) {
                     const g = groupsData.find(x => String(x.group_id) === String(groupId));
                     if (g) g.biliEnabled = enabled;
-                    document.getElementById('enabled-groups').textContent = groupsData.filter(x => x.biliEnabled !== false).length;
+                    animateStatNumber('enabled-groups', groupsData.filter(x => x.biliEnabled !== false).length);
                 }
-            } catch (e) { 
+            } catch (e) {
                 console.error('Toggle group failed:', e);
                 showToast('更新失败', 'error');
-                loadGroups(); 
+                loadGroups();
             }
         }
 
@@ -569,19 +1781,19 @@
                 showToast('群列表为空，请先刷新数据', 'error');
                 return;
             }
-            
+
             try {
                 const groupIds = groupsData.map(g => g.group_id);
                 showToast(`正在批量${enabled ? '启用' : '禁用'} ${groupIds.length} 个群...`, 'info');
-                
+
                 const res = await authFetch('/groups/bulk-config', {
                     method: 'POST',
                     body: JSON.stringify({ enabled, groupIds })
                 });
-                
+
                 if (res.code === 0) {
                     groupsData.forEach(g => g.biliEnabled = enabled);
-                    document.getElementById('enabled-groups').textContent = groupsData.filter(x => x.biliEnabled !== false).length;
+                    animateStatNumber('enabled-groups', groupsData.filter(x => x.biliEnabled !== false).length);
                     renderGroups(document.getElementById('group-search').value.trim());
                     showToast(`已${enabled ? '启用' : '禁用'}所有群聊`, 'success');
                 } else {
@@ -594,12 +1806,15 @@
         }
 
         async function refreshAll() {
+            const refreshBtn = document.getElementById('refresh-btn');
+            refreshBtn.classList.add('spinning');
             showToast('正在刷新...', 'info');
             await Promise.all([
                 loadStatus(),
                 loadGroups(),
                 checkLoginStatus()
             ]);
+            refreshBtn.classList.remove('spinning');
             showToast('刷新完成', 'success');
         }
 
@@ -629,7 +1844,7 @@
             document.getElementById('user-exp-next').textContent = typeof next === 'number' ? next : 'MAX';
             document.getElementById('user-level-progress').style.width = (typeof next === 'number' ? (u.level_info.current_exp / next * 100) : 100) + '%';
             document.getElementById('user-money').textContent = u.money ?? '--';
-            document.getElementById('user-follower').textContent = u.relation_stat?.follower >= 10000 ? (u.relation_stat.follower/10000).toFixed(1)+'万' : (u.relation_stat?.follower ?? '--');
+            document.getElementById('user-follower').textContent = u.relation_stat?.follower >= 10000 ? (u.relation_stat.follower / 10000).toFixed(1) + '万' : (u.relation_stat?.follower ?? '--');
             document.getElementById('user-moral').textContent = u.moral ?? '--';
             if (u.vip?.status === 1) document.getElementById('user-vip').classList.remove('hidden');
         }
@@ -647,7 +1862,7 @@
                     document.getElementById('qrcode-status').textContent = '请扫码登录';
                     remainingTime = 180; startCountdown(); startPolling();
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
 
         function startCountdown() {
@@ -663,7 +1878,7 @@
                     if (res.code === 0 && res.data?.isSuccess) {
                         stopPolling(); showToast('登录成功', 'success'); checkLoginStatus();
                     }
-                } catch (e) {}
+                } catch (e) { }
             }, 2000);
         }
 
@@ -681,7 +1896,7 @@
             }
             if (logoutState === 2) return; // 防止重复点击
             logoutState = 2;
-            
+
             try {
                 const res = await authFetch('/login/logout', { method: 'POST' });
                 if (res.code === 0) { showLoginUI(); showToast('账号已退出', 'success'); }
@@ -700,13 +1915,83 @@
                 document.documentElement.classList.remove('dark');
             }
         }
-        
+
         // 初始化主题并监听系统主题变化
         updateTheme();
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
 
         document.addEventListener('DOMContentLoaded', () => { loadStatus(); loadGroups(); checkLoginStatus(); setInterval(loadStatus, 60000); });
         window.addEventListener('beforeunload', () => { stopPolling(); stopUptimeTimer(); });
+
+        /* 自定义表单交互脚本 */
+        function toggleSelect(id) {
+            const el = document.getElementById(id);
+            // 关闭其他打开的下拉框
+            document.querySelectorAll('.custom-select.active').forEach(s => {
+                if (s.id !== id) s.classList.remove('active');
+            });
+            el.classList.toggle('active');
+        }
+
+        // 点击外部关闭下拉框
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-select')) {
+                document.querySelectorAll('.custom-select.active').forEach(s => s.classList.remove('active'));
+            }
+        });
+
+        function selectOption(selectId, value, label) {
+            const wrapper = document.getElementById(selectId);
+            const hiddenSelect = wrapper.querySelector('select');
+
+            // 更新显示值
+            wrapper.querySelector('.selected-value').textContent = label;
+
+            // 更新内部状态
+            hiddenSelect.value = value;
+
+            // 更新选中样式
+            wrapper.querySelectorAll('.select-option').forEach(opt => {
+                if (opt.dataset.value === value) opt.classList.add('selected');
+                else opt.classList.remove('selected');
+            });
+
+            // 触发 change 事件
+            hiddenSelect.dispatchEvent(new Event('change'));
+
+            // 关闭下拉框
+            wrapper.classList.remove('active');
+        }
+
+        function adjustNumber(inputId, delta) {
+            const input = document.getElementById(inputId);
+            let val = parseInt(input.value) || 0;
+            const min = parseInt(input.min) || 0;
+            const max = parseInt(input.max) || 1000;
+
+            val += delta;
+
+            if (val < min) val = min;
+            if (val > max) val = max;
+
+            input.value = val;
+            input.dispatchEvent(new Event('change'));
+        }
+
+        function checkNumberInput(e) {
+            // 允许: backspace, delete, tab, escape, enter
+            if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
+                // 允许: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // 允许: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                return;
+            }
+            // 确保是数字
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        }
     </script>
 </body>
 
