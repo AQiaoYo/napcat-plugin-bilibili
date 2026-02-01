@@ -108,12 +108,17 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 // 群列表接口
                 base.get(wrapPath('/groups'), async (_req: any, res: any) => {
                     try {
-                        const result = await pluginState.callApi('get_group_list', {});
-                        const groups = result?.data || result || [];
+                        // 直接使用 ctx.actions.call 获取群列表
+                        const groups: any[] = await ctx.actions.call(
+                            'get_group_list',
+                            {},
+                            ctx.adapterName,
+                            ctx.pluginManager.config
+                        );
                         const config = pluginState.getConfig();
 
                         // 为每个群添加配置信息
-                        const groupsWithConfig = groups.map((group: any) => {
+                        const groupsWithConfig = (groups || []).map((group: any) => {
                             const groupId = String(group.group_id);
                             const groupConfig = config.groupConfigs?.[groupId] || {};
                             return {
