@@ -22,6 +22,8 @@ export interface PluginConfig {
     sendMode: SendMode;
     /** 最大视频大小限制 (MB)，超过此大小不下载视频 */
     maxVideoSizeMB: number;
+    /** B 站登录凭据 */
+    credential?: BilibiliCredential;
     /** 按群的单独配置 */
     groupConfigs?: Record<string, GroupBilibiliConfig>;
 }
@@ -96,6 +98,76 @@ export interface BilibiliApiResponse<T = any> {
     message: string;
     ttl?: number;
     data: T;
+}
+
+// ==================== B 站登录相关类型 ====================
+
+/**
+ * B 站登录凭据
+ */
+export interface BilibiliCredential {
+    /** SESSDATA Cookie */
+    sessdata: string;
+    /** bili_jct Cookie (CSRF Token) */
+    bili_jct: string;
+    /** DedeUserID Cookie */
+    dedeuserid: string;
+    /** refresh_token */
+    refresh_token?: string;
+    /** 登录时间戳 */
+    login_time?: number;
+}
+
+/**
+ * 二维码登录状态
+ */
+export enum QrCodeLoginStatus {
+    /** 未扫描 */
+    WAITING = 86101,
+    /** 已扫描未确认 */
+    SCANNED = 86090,
+    /** 二维码过期 */
+    EXPIRED = 86038,
+    /** 登录成功 */
+    SUCCESS = 0,
+}
+
+/**
+ * 二维码登录轮询结果
+ */
+export interface QrCodePollResult {
+    status: QrCodeLoginStatus;
+    message: string;
+    credential?: BilibiliCredential;
+}
+
+/**
+ * 二维码生成结果
+ */
+export interface QrCodeGenerateResult {
+    /** 二维码内容 URL */
+    url: string;
+    /** 二维码密钥 */
+    qrcode_key: string;
+}
+
+/**
+ * B 站用户信息
+ */
+export interface BilibiliUserInfo {
+    /** 用户 ID */
+    mid: number;
+    /** 用户名 */
+    uname: string;
+    /** 头像 URL */
+    face: string;
+    /** 是否登录 */
+    isLogin: boolean;
+    /** 会员信息 */
+    vip?: {
+        type: number;
+        status: number;
+    };
 }
 
 /** 框架配置 UI Schema 变量，NapCat WebUI 会读取此导出 */
