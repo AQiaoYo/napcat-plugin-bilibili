@@ -9,6 +9,8 @@ import type { PluginConfig } from './types';
 /** 默认配置 */
 export const DEFAULT_CONFIG: PluginConfig = {
     enabled: true,
+    sendMode: 'with-video',
+    maxVideoSizeMB: 100,
     groupConfigs: {}
 };
 
@@ -26,7 +28,14 @@ export function initConfigUI(ctx: NapCatPluginContext) {
             </div>
         `),
         // 全局开关
-        ctx.NapCatConfig.boolean('enabled', '启用B站链接解析', DEFAULT_CONFIG.enabled, '开启后插件会自动解析群消息中的 B 站视频链接', true)
+        ctx.NapCatConfig.boolean('enabled', '启用B站链接解析', DEFAULT_CONFIG.enabled, '开启后插件会自动解析群消息中的 B 站视频链接', true),
+        // 发送模式
+        ctx.NapCatConfig.select('sendMode', '发送模式', [
+            { label: '仅发送信息卡片', value: 'info-only' },
+            { label: '发送信息卡片 + 视频', value: 'with-video' }
+        ], DEFAULT_CONFIG.sendMode, '选择发送视频信息还是同时发送视频文件', true),
+        // 最大视频大小
+        ctx.NapCatConfig.number('maxVideoSizeMB', '最大视频大小 (MB)', DEFAULT_CONFIG.maxVideoSizeMB, '超过此大小的视频将不会下载，仅发送信息卡片', true)
     );
 
     return schema;
