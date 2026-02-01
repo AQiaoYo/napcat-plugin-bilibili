@@ -27,6 +27,8 @@ import {
     getLoginStatus,
     clearCredential,
     getQrSessionStatus,
+    startAutoRefreshService,
+    stopAutoRefreshService,
 } from './services/bilibili-login-service';
 import { QrCodeLoginStatus } from './types';
 
@@ -61,6 +63,9 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
         pluginState.initFromContext(ctx);
         pluginState.loadConfig(ctx);
         pluginState.log('info', `初始化完成 | name=${ctx.pluginName}`);
+
+        // 启动 Cookie 自动刷新服务
+        startAutoRefreshService();
 
         // 生成配置 schema 并导出
         try {
@@ -290,6 +295,7 @@ const plugin_onmessage = async (ctx: NapCatPluginContext, event: OB11Message) =>
  */
 const plugin_cleanup = async (ctx: NapCatPluginContext) => {
     try {
+        stopAutoRefreshService();
         pluginState.log('info', '插件已卸载');
     } catch (e) {
         pluginState.log('warn', '插件卸载时出错:', e);
