@@ -97,6 +97,56 @@ export function formatDuration(seconds: number): string {
 // ==================== 链接解析 ====================
 
 /**
+ * 从消息段数组中提取 B 站链接（支持小程序和图文）
+ * @param segments 消息段数组
+ * @returns 链接或 null
+ */
+export function extractLinkFromSegments(segments: any[]): string | null {
+    if (!Array.isArray(segments)) return null;
+
+    for (const seg of segments) {
+        if (seg.type === 'json' && seg.data?.data) {
+            try {
+                // 处理可能被转义的 JSON 字符串
+                const jsonStr = typeof seg.data.data === 'string' ? seg.data.data : JSON.stringify(seg.data.data);
+                const data = JSON.parse(jsonStr);
+                const app = data.app || '';
+                const meta = data.meta || {};
+
+                // 处理小程序 (com.tencent.miniapp)
+                if (app.includes('com.tencent.miniapp')) {
+                    let detail = null;
+                    for (const key in meta) {
+                        if (key.startsWith('detail_')) {
+                            detail = meta[key];
+                            break;
+                        }
+                    }
+                    if (detail && detail.qqdocurl) {
+                        const url = detail.qqdocurl;
+                        if (url.includes('b23.tv') || url.includes('bilibili.com')) {
+                            return url;
+                        }
+                    }
+                }
+
+                // 处理图文链接 (com.tencent.tuwen)
+                if (app.includes('com.tencent.tuwen')) {
+                    const news = meta.news || {};
+                    const url = news.jumpUrl || '';
+                    if (url && (url.includes('b23.tv') || url.includes('bilibili.com'))) {
+                        return url;
+                    }
+                }
+            } catch (e) {
+                // 解析失败忽略
+            }
+        }
+    }
+    return null;
+}
+
+/**
  * 检测消息中是否包含 B 站链接
  * @param text 消息文本
  * @returns 是否包含 B 站链接
