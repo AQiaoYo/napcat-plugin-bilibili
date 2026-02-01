@@ -22,6 +22,8 @@ export interface PluginConfig {
     sendMode: SendMode;
     /** 最大视频大小限制 (MB)，超过此大小不下载视频 */
     maxVideoSizeMB: number;
+    /** 解析缓存过期时间（秒），同一群内相同链接在此时间内不会重复解析，默认 300 秒（5分钟） */
+    parseCacheTTL: number;
     /** B 站登录凭据 */
     credential?: BilibiliCredential;
     /** 按群的单独配置 */
