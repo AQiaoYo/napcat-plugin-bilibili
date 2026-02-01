@@ -32,10 +32,7 @@ export default defineConfig({
             plugins: [
                 {
                     name: 'fix-dirname',
-                    transform(code, id) {
-                        if (id.includes('node-cron')) {
-                            return code.replace(/__dirname/g, 'process.cwd()');
-                        }
+                    transform(code) {
                         return code;
                     }
                 }

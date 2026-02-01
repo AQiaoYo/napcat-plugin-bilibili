@@ -75,22 +75,89 @@ jobs:
         run: |
           unzip -l napcat-plugin-bilibili.zip
 
+      - name: Create Release Note via AI
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          OPENROUTER_API_URL: "https://91vip.futureppo.top/v1/chat/completions"
+          OPENROUTER_MODEL: "copilot/gemini-3-flash-preview"
+          GITHUB_OWNER: "AQiaoYo"
+          GITHUB_REPO: "napcat-plugin-bilibili"
+        run: |
+          set -euo pipefail
+          CURRENT_TAG="${{ steps.version.outputs.version }}"
+          
+          # 获取 tag 列表并找到上一个 tag
+          git fetch --tags --force
+          TAGS=( $(git tag -l "v*" --sort=V) )
+          PREV_TAG=""
+          for i in "${!TAGS[@]}"; do
+            if [ "${TAGS[$i]}" = "$CURRENT_TAG" ]; then
+              if [ $i -gt 0 ]; then
+                PREV_TAG="${TAGS[$((i-1))]}"
+              fi
+              break
+            fi
+          done
+
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD | head -1)
+          fi
+          echo "Previous tag: $PREV_TAG"
+
+          # 获取提交记录和差异
+          COMMITS=$(git log --pretty=format:'- %s (%h)' "$PREV_TAG".."$CURRENT_TAG" 2>/dev/null || git log --pretty=format:'- %s (%h)' -10)
+          SUMMARY_LINE=$(git diff --stat "$PREV_TAG".."$CURRENT_TAG" | tail -1 || echo "No changes")
+          FILE_CHANGES=$(git diff --stat "$PREV_TAG".."$CURRENT_TAG" | head -n -1 | head -30 || echo "")
+          CODE_DIFF=$(git diff "$PREV_TAG".."$CURRENT_TAG" -- 'src/*.ts' | head -c 5000 || echo "Diff too large or no code changes")
+
+          # 构建请求
+          SYSTEM_PROMPT=$(cat .github/prompt/release_note_prompt.txt)
+          USER_CONTENT="当前版本: $CURRENT_TAG
+          上一版本: $PREV_TAG
+          日期: $(date +'%Y-%m-%d')
+          
+          ## 提交列表
+          $COMMITS
+          
+          ## 文件变化统计
+          $SUMMARY_LINE
+          
+          ## 变更文件列表
+          $FILE_CHANGES
+          
+          ## 关键代码变化预览
+          \`\`\`diff
+          $CODE_DIFF
+          \`\`\`"
+
+          BODY=$(jq -n \
+            --arg system "$SYSTEM_PROMPT" \
+            --arg user "$USER_CONTENT" \
+            --arg model "$OPENROUTER_MODEL" \
+            '{model: $model, messages:[{role:"system", content:$system},{role:"user", content:$user}], temperature:0.2, max_tokens:1500}')
+
+          RESPONSE=$(curl -s -X POST "$OPENROUTER_API_URL" \
+            -H "Authorization: Bearer $OPENAI_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$BODY")
+
+          RELEASE_BODY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // ""')
+
+          if [ -n "$RELEASE_BODY" ] && [ "$RELEASE_BODY" != "null" ]; then
+            echo -e "$RELEASE_BODY" > CHANGELOG.md
+            # 替换占位符
+            sed -i "s/{VERSION}/$CURRENT_TAG/g" CHANGELOG.md
+            sed -i "s/{PREV_VERSION}/$PREV_TAG/g" CHANGELOG.md
+          else
+            sed "s/{VERSION}/$CURRENT_TAG/g" .github/prompt/default.md | sed "s/{PREV_VERSION}/$PREV_TAG/g" > CHANGELOG.md
+          fi
+
       - name: Create Release Draft
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: Release ${{ steps.version.outputs.version }}
-          body: |
-            ## NapCat Bilibili 视频解析插件
-            
-            ### 安装方法
-            1. 下载 `napcat-plugin-bilibili.zip`
-            2. 解压到 NapCat 的 `plugins` 目录
-            3. 重启 NapCat 或在 WebUI 中启用插件
-
-            ### 更新内容
-            - 自动同步版本号至 ${{ steps.version.outputs.version }}
-            - 请在此处填写更多更新内容
+          body_path: CHANGELOG.md
           draft: true
           files: |
             napcat-plugin-bilibili.zip
