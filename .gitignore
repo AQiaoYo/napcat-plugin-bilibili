@@ -136,4 +136,5 @@ dist
 .pnp.*
 
 # 其他文件
-/example
+/.api-docs
+/.example
