@@ -109,7 +109,8 @@ class PluginState {
             return null;
         }
         try {
-            const result = await (this.actions as any).call(api, params);
+            // 必须传递 adapterName 和 networkConfig
+            const result = await (this.actions as any).call(api, params, this.adapterName, this.networkConfig);
             return result;
         } catch (error) {
             this.log('error', `调用 API ${api} 失败:`, error);
