@@ -672,6 +672,87 @@
             box-shadow: 0 12px 32px rgba(251, 114, 153, 0.3);
         }
 
+        /* 二维码加载动画 */
+        .qrcode-loader {
+            width: 120px;
+            height: 120px;
+            position: relative;
+            background: linear-gradient(135deg, #f0f0f0 25%, transparent 25%) -20px 0,
+                linear-gradient(225deg, #f0f0f0 25%, transparent 25%) -20px 0,
+                linear-gradient(315deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%);
+            background-size: 20px 20px;
+            background-color: #fafafa;
+            border-radius: 12px;
+            animation: qrcodeLoaderPulse 1.5s ease-in-out infinite;
+            overflow: hidden;
+        }
+
+        .dark .qrcode-loader {
+            background: linear-gradient(135deg, #3f4045 25%, transparent 25%) -20px 0,
+                linear-gradient(225deg, #3f4045 25%, transparent 25%) -20px 0,
+                linear-gradient(315deg, #3f4045 25%, transparent 25%),
+                linear-gradient(45deg, #3f4045 25%, transparent 25%);
+            background-size: 20px 20px;
+            background-color: #2a2b2e;
+        }
+
+        .qrcode-loader::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(251, 114, 153, 0.15), transparent);
+            animation: qrcodeLoaderShimmer 1.5s ease-in-out infinite;
+        }
+
+        .qrcode-loader::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            margin: -20px 0 0 -20px;
+            border: 3px solid transparent;
+            border-top-color: #FB7299;
+            border-radius: 50%;
+            animation: qrcodeLoaderSpin 0.8s linear infinite;
+        }
+
+        @keyframes qrcodeLoaderPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.85;
+                transform: scale(0.98);
+            }
+        }
+
+        @keyframes qrcodeLoaderShimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes qrcodeLoaderSpin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
         /* VIP 标签闪烁 */
         #user-vip {
             animation: vipGlow 2s ease-in-out infinite alternate;
@@ -1265,6 +1346,11 @@
                                 立即扫码登录
                             </button>
                         </div>
+                        <!-- 二维码加载中 -->
+                        <div id="qrcode-loading" class="hidden py-8">
+                            <div class="qrcode-loader mx-auto mb-4"></div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400 font-medium">正在生成二维码...</div>
+                        </div>
                         <div id="qrcode-wrapper" class="hidden">
                             <img id="qrcode-img"
                                 class="w-40 h-40 mx-auto border-4 border-white dark:border-gray-700 shadow-sm rounded-xl mb-3"
@@ -1852,17 +1938,36 @@
         async function generateQrCode() {
             stopPolling();
             document.getElementById('qrcode-placeholder').classList.add('hidden');
-            document.getElementById('qrcode-wrapper').classList.remove('hidden');
-            document.getElementById('qrcode-status').textContent = '二维码生成中...';
+            document.getElementById('qrcode-wrapper').classList.add('hidden');
+            document.getElementById('qrcode-loading').classList.remove('hidden');
             try {
                 const res = await authFetch('/login/qrcode/generate', { method: 'POST' });
                 if (res.code === 0) {
                     qrcodeKey = res.data.qrcode_key;
-                    document.getElementById('qrcode-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(res.data.url);
+                    const qrcodeImg = document.getElementById('qrcode-img');
+                    qrcodeImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(res.data.url);
+                    // 等待图片加载完成后再显示
+                    qrcodeImg.onload = () => {
+                        document.getElementById('qrcode-loading').classList.add('hidden');
+                        document.getElementById('qrcode-wrapper').classList.remove('hidden');
+                    };
+                    qrcodeImg.onerror = () => {
+                        document.getElementById('qrcode-loading').classList.add('hidden');
+                        document.getElementById('qrcode-wrapper').classList.remove('hidden');
+                    };
                     document.getElementById('qrcode-status').textContent = '请扫码登录';
                     remainingTime = 180; startCountdown(); startPolling();
+                } else {
+                    // 生成失败，恢复按钮
+                    document.getElementById('qrcode-loading').classList.add('hidden');
+                    document.getElementById('qrcode-placeholder').classList.remove('hidden');
+                    showToast('二维码生成失败', 'error');
                 }
-            } catch (e) { }
+            } catch (e) {
+                document.getElementById('qrcode-loading').classList.add('hidden');
+                document.getElementById('qrcode-placeholder').classList.remove('hidden');
+                showToast('二维码生成失败', 'error');
+            }
         }
 
         function startCountdown() {
