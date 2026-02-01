@@ -47,6 +47,16 @@
 
 如果你有任何建议或发现了 Bug，欢迎提交 Issue 或 Pull Request。
 
+## 鸣谢
+
+本项目在开发过程中参考了以下优秀项目，排名不分先后：
+
+- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect) - 详尽的 B 站 API 文档支持。
+- [astrbot_plugin_link_resolver](https://github.com/vacacia/astrbot_plugin_link_resolver) - 链接解析逻辑改进参考。
+- [bilibili-api](https://github.com/Nemo2011/bilibili-api) - B 站接口对接参考。
+- [nonebot-plugin-bili-helper](https://github.com/krimeshu/nonebot-plugin-bili-helper) - 视频辅助解析逻辑参考。
+- [napcat-plugin-auto-clear](https://github.com/AQiaoYo/napcat-plugin-auto-clear) - NapCat 插件结构与 WebUI 参考。
+
 ## 许可证
 
 MIT License
