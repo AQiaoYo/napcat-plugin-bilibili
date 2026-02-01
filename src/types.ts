@@ -163,11 +163,35 @@ export interface BilibiliUserInfo {
     face: string;
     /** 是否登录 */
     isLogin: boolean;
+    /** 等级信息 */
+    level_info?: {
+        current_level: number;
+        current_min: number;
+        current_exp: number;
+        next_exp: string | number;
+    };
+    /** 硬币数 */
+    money?: number;
     /** 会员信息 */
     vip?: {
         type: number;
         status: number;
+        label: {
+            text: string;
+        };
     };
+    /** 钱包信息 */
+    wallet?: {
+        bcoin_balance: number;
+    };
+    /** 社交统计 */
+    relation_stat?: {
+        following: number;
+        follower: number;
+        dynamic_count: number;
+    };
+    /** 节操值 */
+    moral?: number;
 }
 
 /** 框架配置 UI Schema 变量，NapCat WebUI 会读取此导出 */

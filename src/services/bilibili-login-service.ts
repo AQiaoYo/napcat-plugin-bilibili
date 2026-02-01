@@ -33,6 +33,9 @@ const QRCODE_POLL_API = 'https://passport.bilibili.com/x/passport-login/web/qrco
 /** 获取用户信息 API */
 const USER_INFO_API = 'https://api.bilibili.com/x/web-interface/nav';
 
+/** 获取用户关系统计 API */
+const USER_RELATION_API = 'https://api.bilibili.com/x/relation/stat';
+
 /** 默认请求头 */
 const DEFAULT_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -320,7 +323,32 @@ export async function getUserInfo(): Promise<BilibiliUserInfo | null> {
             return null;
         }
 
-        return data.data;
+        const userInfo = data.data;
+
+        // 额外获取社交统计数据
+        try {
+            const relResponse = await fetch(`${USER_RELATION_API}?vmid=${userInfo.mid}`, {
+                method: 'GET',
+                headers: {
+                    ...DEFAULT_HEADERS,
+                    'Cookie': `SESSDATA=${credential.sessdata}; bili_jct=${credential.bili_jct}; DedeUserID=${credential.dedeuserid}`,
+                },
+            });
+            if (relResponse.ok) {
+                const relData = await relResponse.json();
+                if (relData.code === 0) {
+                    userInfo.relation_stat = {
+                        following: relData.data.following,
+                        follower: relData.data.follower,
+                        dynamic_count: 0 // 这个 API 不带动态数，先设为0
+                    };
+                }
+            }
+        } catch (e) {
+            pluginState.logDebug('获取用户社交统计失败，已跳过');
+        }
+
+        return userInfo;
     } catch (error) {
         pluginState.log('error', '获取用户信息异常:', error);
         return null;
