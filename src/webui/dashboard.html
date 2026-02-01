@@ -4,37 +4,93 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>B站视频解析 · 仪表盘</title>
+    <title>B站视频解析 · 控制台</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bili: {
+                            pink: '#FB7299',
+                            blue: '#00A1D6',
+                            dark: '#18191C',
+                            gray: '#F4F4F4',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; overflow: hidden; background: #f0f2f5; color: #1f2937; font-size: 16px; }
+        
+        .app-layout {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
         }
 
-        .toggle-switch {
-            position: relative;
-            width: 48px;
-            height: 24px;
+        .main-content {
+            display: grid;
+            grid-template-columns: 25% 1fr;
+            gap: 16px;
+            padding: 16px;
+            min-height: 0;
         }
 
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
+        /* 统一卡片 */
+        .glass-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* 侧边栏垂直布局 */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        /* 滚动条美化 */
+        .sidebar::-webkit-scrollbar, .scroll-area::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb, .scroll-area::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+
+        .account-mini { padding: 16px; }
+
+        /* 顶部状态条 */
+        .top-stat-item {
+            padding: 0 24px;
+            border-right: 1px solid #e5e7eb;
+        }
+        .top-stat-item:last-child { border-right: none; }
+
+        /* 群列表容器 */
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* 开关美化 */
+        .toggle-switch { position: relative; width: 48px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .toggle-slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
+            inset: 0;
+            background-color: #d1d5db;
             transition: 0.3s;
             border-radius: 24px;
         }
-
         .toggle-slider:before {
             position: absolute;
             content: "";
@@ -46,694 +102,450 @@
             transition: 0.3s;
             border-radius: 50%;
         }
+        input:checked + .toggle-slider { background-color: #00A1D6; }
+        input:checked + .toggle-slider:before { transform: translateX(24px); }
 
-        input:checked+.toggle-slider {
-            background-color: #00a1d6;
-        }
+        /* Toast */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 100; }
+        .toast { padding: 12px 24px; border-radius: 8px; color: white; margin-bottom: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-        input:checked+.toggle-slider:before {
-            transform: translateX(24px);
-        }
-
-        .loading {
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        /* 二维码样式 */
-        .qrcode-container {
+        .group-item {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #f3f4f6;
+            transition: all 0.2s;
+            background: #fff;
         }
-
-        .qrcode-img {
-            width: 200px;
-            height: 200px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 8px;
-            background: white;
-        }
-
-        .qrcode-status {
-            margin-top: 12px;
-            font-size: 14px;
-            color: #6b7280;
-        }
-
-        .qrcode-timer {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-top: 4px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #00a1d6 0%, #0081b3 100%);
-            color: white;
-            padding: 10px 24px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 161, 214, 0.3);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .user-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 2px solid #00a1d6;
-        }
-
-        .vip-badge {
-            background: linear-gradient(135deg, #fb7299 0%, #ff9a9e 100%);
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 6px;
-        }
+        .group-item:hover { border-color: #00A1D6; box-shadow: 0 2px 8px rgba(0,161,214,0.1); }
     </style>
 </head>
 
-<body class="bg-gray-50 min-h-screen">
-    <div class="max-w-4xl mx-auto p-6">
-        <!-- 标题区域 -->
-        <div class="bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl p-6 mb-6 shadow-lg">
-            <div class="flex items-center gap-3">
-                <span class="text-4xl">📺</span>
-                <div>
-                    <h1 class="text-2xl font-bold">B站视频链接解析</h1>
-                    <p class="text-blue-100 text-sm mt-1">自动解析群消息中的 B 站视频链接并发送视频信息</p>
+<body>
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="app-layout">
+        <!-- 顶部通栏 -->
+        <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shadow-sm z-10">
+            <div class="flex items-center gap-4">
+                <span class="text-3xl">📺</span>
+                <h1 class="text-xl font-bold text-gray-800 tracking-tight">B站视频解析 · 控制中心</h1>
+                <span id="status-badge" class="ml-2 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600 border border-green-200">运行中</span>
+            </div>
+
+            <div class="flex items-center h-10">
+                <div class="top-stat-item flex flex-col items-center">
+                    <span class="text-xs text-gray-400 mb-1">今日解析</span>
+                    <span id="stats-today" class="text-lg font-bold text-blue-600">0</span>
+                </div>
+                <div class="top-stat-item flex flex-col items-center">
+                    <span class="text-xs text-gray-400 mb-1">累计解析</span>
+                    <span id="stats-total" class="text-lg font-bold text-blue-600">0</span>
+                </div>
+                <div class="top-stat-item flex flex-col items-center">
+                    <span class="text-xs text-gray-400 mb-1">活跃群聊</span>
+                    <span id="enabled-groups" class="text-lg font-bold text-pink-500">0</span>
+                </div>
+                <div class="top-stat-item flex flex-col items-center border-none">
+                    <span class="text-xs text-gray-400 mb-1">运行时长</span>
+                    <span id="uptime" class="text-lg font-bold text-gray-700">--</span>
                 </div>
             </div>
-        </div>
+        </header>
 
-        <!-- 状态卡片 -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <span>📊</span> 插件状态
-            </h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-blue-50 rounded-lg p-4">
-                    <div class="text-sm text-blue-600">全局开关</div>
-                    <div id="global-status" class="text-xl font-bold text-blue-700 mt-1 loading">加载中...</div>
-                </div>
-                <div class="bg-green-50 rounded-lg p-4">
-                    <div class="text-sm text-green-600">运行时长</div>
-                    <div id="uptime" class="text-xl font-bold text-green-700 mt-1 loading">加载中...</div>
-                </div>
-                <div class="bg-purple-50 rounded-lg p-4">
-                    <div class="text-sm text-purple-600">已启用群数</div>
-                    <div id="enabled-groups" class="text-xl font-bold text-purple-700 mt-1 loading">加载中...</div>
-                </div>
-                <div class="bg-orange-50 rounded-lg p-4">
-                    <div class="text-sm text-orange-600">总群数</div>
-                    <div id="total-groups" class="text-xl font-bold text-orange-700 mt-1 loading">加载中...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- B站账号登录 -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <span>🔐</span> B站账号登录
-                <span class="text-sm font-normal text-gray-400">（登录后可获取更高清视频）</span>
-            </h2>
-
-            <!-- 未登录状态 -->
-            <div id="login-section" class="hidden">
-                <div class="qrcode-container">
-                    <div id="qrcode-placeholder"
-                        class="w-52 h-52 bg-gray-100 rounded-xl flex items-center justify-center">
-                        <button class="btn-primary" onclick="generateQrCode()">
-                            生成登录二维码
-                        </button>
+        <main class="main-content">
+            <!-- 左侧边栏 (25%) -->
+            <aside class="sidebar">
+                <!-- 账号状态 -->
+                <div class="glass-card shadow-sm">
+                    <div class="px-5 py-4 border-b border-gray-50 flex items-center gap-3 font-bold text-base text-gray-700 bg-gray-50/50 rounded-t-xl">
+                        <span>🔐</span> 登录信息
                     </div>
-                    <div id="qrcode-wrapper" class="hidden">
-                        <img id="qrcode-img" class="qrcode-img" src="" alt="登录二维码">
-                        <div id="qrcode-status" class="qrcode-status text-center">请使用B站APP扫码登录</div>
-                        <div id="qrcode-timer" class="qrcode-timer text-center"></div>
-                        <button id="refresh-qrcode-btn" class="btn-primary mt-4 hidden" onclick="generateQrCode()">
-                            刷新二维码
-                        </button>
-                    </div>
-                </div>
-            </div>
+                    
+                    <div id="login-loading" class="p-8 text-center text-sm text-gray-400">正在检查登录状态...</div>
 
-            <!-- 已登录状态 -->
-            <div id="logged-in-section" class="hidden">
-                <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                    <div class="flex items-center gap-4">
-                        <img id="user-avatar" class="user-avatar" src="" alt="头像" referrerpolicy="no-referrer"
-                            crossorigin="anonymous">
-                        <div>
-                            <div class="flex items-center">
-                                <span id="user-name" class="font-bold text-gray-700"></span>
-                                <span id="user-vip" class="vip-badge hidden">大会员</span>
-                            </div>
-                            <div id="user-uid" class="text-sm text-gray-500"></div>
+                    <!-- 未登录 -->
+                    <div id="login-section" class="hidden p-6 text-center">
+                        <div id="qrcode-placeholder" class="mb-4">
+                            <button class="w-full py-3 bg-blue-500 text-white rounded-xl text-sm font-bold hover:bg-blue-600 transition shadow-md shadow-blue-100" onclick="generateQrCode()">
+                                立即扫码登录
+                            </button>
+                        </div>
+                        <div id="qrcode-wrapper" class="hidden">
+                            <img id="qrcode-img" class="w-40 h-40 mx-auto border-4 border-white shadow-sm rounded-xl mb-3" src="">
+                            <div id="qrcode-status" class="text-xs text-gray-500 mb-3">请使用 Bilibili App 扫码</div>
+                            <button class="text-sm text-blue-500 font-medium hover:underline" onclick="generateQrCode()">刷新二维码</button>
                         </div>
                     </div>
-                    <button class="btn-danger" onclick="logout()">退出登录</button>
+
+                    <!-- 已登录 -->
+                    <div id="logged-in-section" class="hidden account-mini">
+                        <div class="flex items-center gap-4 mb-5">
+                            <img id="user-avatar" class="w-14 h-14 rounded-full border-2 border-white ring-2 ring-blue-400 shadow-sm" src="">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span id="user-name" class="font-bold text-base text-gray-800 truncate">--</span>
+                                    <span id="user-vip" class="text-[10px] bg-pink-500 text-white px-1.5 py-0.5 rounded font-bold hidden">VIP</span>
+                                </div>
+                                <div id="user-uid" class="text-xs text-gray-400 mt-1">UID: --</div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-400 mb-2 font-medium">
+                                    <span class="text-orange-500 font-bold italic">LV<span id="user-level">0</span></span>
+                                    <span><span id="user-exp-current">0</span> / <span id="user-exp-next">0</span></span>
+                                </div>
+                                <div class="h-2 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+                                    <div id="user-level-progress" class="h-full bg-gradient-to-r from-orange-400 to-yellow-300 transition-all duration-700" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-3 gap-2 border-t border-b border-gray-50 bg-gray-50/30 rounded-lg" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
+                                <div class="text-center">
+                                    <div class="text-[10px] text-gray-400 mb-1 font-medium">硬币</div>
+                                    <div id="user-money" class="text-sm font-bold text-gray-700">--</div>
+                                </div>
+                                <div class="text-center border-l border-r border-gray-100">
+                                    <div class="text-[10px] text-gray-400 mb-1 font-medium">粉丝</div>
+                                    <div id="user-follower" class="text-sm font-bold text-gray-700">--</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-[10px] text-gray-400 mb-1 font-medium">节操</div>
+                                    <div id="user-moral" class="text-sm font-bold text-gray-700">--</div>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full py-2.5 text-xs text-red-500 font-bold hover:bg-red-50 rounded-xl transition border border-red-100 mt-2" onclick="logout()">退出登录</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 加载中状态 -->
-            <div id="login-loading" class="text-center py-8 text-gray-500">
-                <div class="loading">正在检查登录状态...</div>
-            </div>
-        </div>
+                <!-- 插件设置 -->
+                <div class="glass-card shadow-sm">
+                    <div class="px-5 py-4 border-b border-gray-50 flex items-center gap-3 font-bold text-base text-gray-700 bg-gray-50/50 rounded-t-xl">
+                        <span>⚙️</span> 功能配置
+                    </div>
+                    <div class="p-5 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-gray-800">全局解析开关</div>
+                                <div class="text-xs text-gray-400 mt-1">控制所有群的自动化处理</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="global-toggle" onchange="toggleGlobal(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
 
-        <!-- 全局开关 -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                        <span>⚡</span> 全局开关
-                    </h2>
-                    <p class="text-gray-500 text-sm mt-1">关闭后将停止解析所有群的 B 站链接</p>
+                        <div>
+                            <div class="text-sm font-bold text-gray-800 mb-2">默认发送模式</div>
+                            <select id="send-mode" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400 focus:bg-white transition" onchange="updateConfig()">
+                                <option value="info-only">仅发送视频概览卡片</option>
+                                <option value="with-video">发送概览卡片 + 视频源文件</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="text-sm font-bold text-gray-800 mb-2">单视频大小阈值 (MB)</div>
+                            <input type="number" id="max-video-size" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400 focus:bg-white transition" min="1" max="1000" onchange="updateConfig()">
+                            <p class="text-[10px] text-gray-400 mt-2">超过此大小的视频将只发送信息卡片</p>
+                        </div>
+                    </div>
                 </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="global-toggle" onchange="toggleGlobal(this.checked)">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-        </div>
 
-        <!-- 群列表 -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <span>👥</span> 群聊配置
-                <span class="text-sm font-normal text-gray-400">（单独控制每个群的解析开关）</span>
-            </h2>
+            </aside>
 
-            <div id="groups-loading" class="text-center py-8 text-gray-500">
-                <div class="loading">正在加载群列表...</div>
-            </div>
+            <!-- 右侧主区域 (75%) -->
+            <section class="glass-card overflow-hidden shadow-sm">
+                <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">👥</span>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-lg text-gray-800 tracking-tight">群聊解析权限管理</span>
+                            <span id="total-groups" class="text-xs text-gray-400 font-normal">共计扫描到 0 个群聊</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
+                            <input type="text" id="group-search" class="pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm w-64 outline-none focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all" placeholder="输入群名或群号搜索..." oninput="filterGroups()">
+                        </div>
+                        <div class="h-6 w-[1px] bg-gray-200 mx-1"></div>
+                        <div class="flex gap-2">
+                            <button class="px-3 py-1.5 text-xs text-blue-600 font-bold hover:bg-blue-50 rounded-lg transition" onclick="toggleAllGroups(true)">一键全开</button>
+                            <button class="px-3 py-1.5 text-xs text-gray-400 font-bold hover:bg-gray-100 rounded-lg transition" onclick="toggleAllGroups(false)">一键全关</button>
+                        </div>
+                    </div>
+                </div>
 
-            <div id="groups-container" class="space-y-3 hidden">
-                <!-- 群列表将在这里动态生成 -->
-            </div>
+                <div class="scroll-area bg-gray-50/30" id="groups-scroll">
+                    <!-- 加载中 -->
+                    <div id="groups-loading" class="py-32 text-center">
+                        <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <div class="mt-4 text-sm text-gray-400 font-medium">正在拉取群组列表...</div>
+                    </div>
 
-            <div id="groups-empty" class="text-center py-8 text-gray-400 hidden">
-                暂无群聊数据
-            </div>
-        </div>
+                    <!-- 列表容器 -->
+                    <div id="groups-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 hidden">
+                        <!-- 动态生成 -->
+                    </div>
 
-        <!-- 使用说明 -->
-        <div class="bg-white rounded-xl shadow-md p-6 mt-6">
-            <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <span>💡</span> 使用说明
-            </h2>
-            <div class="text-gray-600 text-sm space-y-2">
-                <p>✅ 支持的链接格式：</p>
-                <ul class="list-disc list-inside ml-4 text-gray-500">
-                    <li>BV号：<code class="bg-gray-100 px-1 rounded">BV1xx411c7mD</code></li>
-                    <li>AV号：<code class="bg-gray-100 px-1 rounded">av170001</code></li>
-                    <li>完整链接：<code class="bg-gray-100 px-1 rounded">https://www.bilibili.com/video/BV1xx411c7mD</code>
-                    </li>
-                    <li>短链接：<code class="bg-gray-100 px-1 rounded">https://b23.tv/xxxxxx</code></li>
-                </ul>
-                <p class="mt-3">📤 解析成功后会发送视频封面、标题、UP主、播放量等信息到群里。</p>
-            </div>
-        </div>
+                    <!-- 空状态 -->
+                    <div id="groups-empty" class="py-32 text-center hidden">
+                        <div class="text-5xl mb-4 grayscale">🍃</div>
+                        <div class="text-base font-bold text-gray-400">未找到匹配的群聊</div>
+                        <p class="text-sm text-gray-300 mt-1">请尝试更换搜索关键词</p>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
-        // 路由前缀
         const ROUTE_PREFIX = '/bilibili';
-
-        // 获取 webui_token
         const token = new URLSearchParams(window.location.search).get('webui_token') || '';
-
-        // 获取认证头
-        function authHeaders(h = {}) {
-            if (token) h['Authorization'] = 'Bearer ' + token;
-            return h;
-        }
-
-        // 解析 API 基础路径
-        async function resolveApiBase() {
-            const tries = [];
-            // 尝试从全局变量获取插件名
-            if (window.__PLUGIN_NAME__) tries.push(window.__PLUGIN_NAME__);
-            try {
-                if (window.parent && window.parent.__PLUGIN_NAME__) tries.push(window.parent.__PLUGIN_NAME__);
-            } catch (e) { }
-
-            // 从 URL 路径推断 - 查找 /ext/ 后面的部分
-            const pathname = location.pathname;
-            const extMatch = pathname.match(/\/ext\/([^\/]+)/);
-            if (extMatch && extMatch[1]) {
-                tries.push(extMatch[1]);
-            }
-
-            // 默认插件名
-            tries.push('napcat-plugin-bilibili');
-
-            for (const name of [...new Set(tries)]) {
-                const base = '/api/Plugin/ext/' + name;
-                try {
-                    const r = await fetch(base + ROUTE_PREFIX + '/status', { headers: authHeaders() });
-                    if (r.ok) return base;
-                } catch (e) { }
-            }
-            return '/api/Plugin/ext/' + (window.__PLUGIN_NAME__ || 'napcat-plugin-bilibili');
-        }
-
-        // API 基础路径 Promise
-        let API_BASE_P = resolveApiBase();
-
-        // 带鉴权的 fetch
-        async function authFetch(path, options = {}) {
-            const base = await API_BASE_P;
-            const fullPath = base + ROUTE_PREFIX + path;
-            console.log('[Bilibili] API 请求:', fullPath);
-            const res = await fetch(fullPath, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers,
-                    ...authHeaders()
-                }
-            });
-            return res.json();
-        }
-
-        // 群数据缓存
         let groupsData = [];
         let globalEnabled = true;
-
-        // 登录相关状态
         let qrcodeKey = null;
         let pollTimer = null;
         let countdownTimer = null;
         let remainingTime = 180;
 
-        // 检查登录状态
-        async function checkLoginStatus() {
-            try {
-                console.log('[Bilibili] 检查登录状态...');
-                const res = await authFetch('/login/status');
-                console.log('[Bilibili] 登录状态响应:', res);
+        function authHeaders(h = {}) { if (token) h['Authorization'] = 'Bearer ' + token; return h; }
 
-                if (res.code === 0) {
-                    const data = res.data;
-                    document.getElementById('login-loading').classList.add('hidden');
-
-                    if (data.isLoggedIn && data.userInfo) {
-                        showLoggedInUI(data.userInfo);
-                    } else {
-                        showLoginUI();
-                    }
-                } else {
-                    // 如果返回的不是我们的 API 格式，显示未登录
-                    console.warn('[Bilibili] API 返回格式不正确:', res);
-                    document.getElementById('login-loading').classList.add('hidden');
-                    showLoginUI();
-                }
-            } catch (e) {
-                console.error('检查登录状态失败:', e);
-                document.getElementById('login-loading').classList.add('hidden');
-                showLoginUI();
-            }
-        }
-
-        // 显示未登录界面
-        function showLoginUI() {
-            document.getElementById('login-section').classList.remove('hidden');
-            document.getElementById('logged-in-section').classList.add('hidden');
-        }
-
-        // 显示已登录界面
-        function showLoggedInUI(userInfo) {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('logged-in-section').classList.remove('hidden');
-
-            // 处理头像 - B 站头像可能有防盗链，使用备用方案
-            const avatarEl = document.getElementById('user-avatar');
-            if (userInfo.face) {
-                avatarEl.src = userInfo.face;
-                avatarEl.onerror = function () {
-                    // 头像加载失败，使用默认头像
-                    this.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%2300a1d6" width="100" height="100"/><text x="50" y="60" font-size="40" fill="white" text-anchor="middle">👤</text></svg>');
-                };
-            } else {
-                avatarEl.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%2300a1d6" width="100" height="100"/><text x="50" y="60" font-size="40" fill="white" text-anchor="middle">👤</text></svg>');
-            }
-
-            document.getElementById('user-name').textContent = userInfo.uname || '未知用户';
-            document.getElementById('user-uid').textContent = 'UID: ' + (userInfo.mid || '');
-
-            // 显示大会员标识
-            if (userInfo.vip && userInfo.vip.status === 1) {
-                document.getElementById('user-vip').classList.remove('hidden');
-            } else {
-                document.getElementById('user-vip').classList.add('hidden');
-            }
-        }
-
-        // 生成二维码
-        async function generateQrCode() {
-            try {
-                // 停止之前的轮询
-                stopPolling();
-
-                document.getElementById('qrcode-placeholder').classList.add('hidden');
-                document.getElementById('qrcode-wrapper').classList.remove('hidden');
-                document.getElementById('qrcode-status').textContent = '正在生成二维码...';
-                document.getElementById('refresh-qrcode-btn').classList.add('hidden');
-
-                const res = await authFetch('/login/qrcode/generate', {
-                    method: 'POST'
-                });
-
-                if (res.code === 0 && res.data) {
-                    qrcodeKey = res.data.qrcode_key;
-
-                    // 使用第三方服务生成二维码图片
-                    const qrcodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' +
-                        encodeURIComponent(res.data.url);
-                    document.getElementById('qrcode-img').src = qrcodeUrl;
-                    document.getElementById('qrcode-status').textContent = '请使用B站APP扫码登录';
-
-                    // 开始倒计时
-                    remainingTime = 180;
-                    startCountdown();
-
-                    // 开始轮询
-                    startPolling();
-                } else {
-                    document.getElementById('qrcode-status').textContent = '生成失败: ' + (res.message || '未知错误');
-                    document.getElementById('refresh-qrcode-btn').classList.remove('hidden');
-                }
-            } catch (e) {
-                console.error('生成二维码失败:', e);
-                document.getElementById('qrcode-status').textContent = '生成失败，请重试';
-                document.getElementById('refresh-qrcode-btn').classList.remove('hidden');
-            }
-        }
-
-        // 开始倒计时
-        function startCountdown() {
-            if (countdownTimer) clearInterval(countdownTimer);
-
-            updateCountdown();
-            countdownTimer = setInterval(() => {
-                remainingTime--;
-                updateCountdown();
-
-                if (remainingTime <= 0) {
-                    clearInterval(countdownTimer);
-                    countdownTimer = null;
-                }
-            }, 1000);
-        }
-
-        // 更新倒计时显示
-        function updateCountdown() {
-            const minutes = Math.floor(remainingTime / 60);
-            const seconds = remainingTime % 60;
-            document.getElementById('qrcode-timer').textContent =
-                `二维码有效期: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        // 开始轮询二维码状态
-        function startPolling() {
-            if (pollTimer) clearInterval(pollTimer);
-
-            pollTimer = setInterval(async () => {
+        async function resolveApiBase() {
+            const tries = [window.__PLUGIN_NAME__, 'napcat-plugin-bilibili'];
+            const extMatch = location.pathname.match(/\/ext\/([^\/]+)/);
+            if (extMatch) tries.unshift(extMatch[1]);
+            
+            for (const name of [...new Set(tries.filter(Boolean))]) {
+                const base = '/api/Plugin/ext/' + name;
                 try {
-                    const res = await authFetch('/login/qrcode/poll?qrcode_key=' + encodeURIComponent(qrcodeKey || ''));
-
-                    if (res.code === 0 && res.data) {
-                        const data = res.data;
-
-                        if (data.isSuccess) {
-                            // 登录成功
-                            stopPolling();
-                            document.getElementById('qrcode-status').textContent = '✅ 登录成功！';
-                            document.getElementById('qrcode-status').className = 'qrcode-status text-center text-green-600 font-bold';
-
-                            // 延迟刷新显示用户信息
-                            setTimeout(() => {
-                                checkLoginStatus();
-                            }, 1000);
-                        } else if (data.isExpired) {
-                            // 二维码过期
-                            stopPolling();
-                            document.getElementById('qrcode-status').textContent = '⏰ 二维码已过期，请刷新';
-                            document.getElementById('refresh-qrcode-btn').classList.remove('hidden');
-                        } else if (data.isScanned) {
-                            // 已扫码
-                            document.getElementById('qrcode-status').textContent = '📱 已扫码，请在手机上确认登录';
-                            document.getElementById('qrcode-status').className = 'qrcode-status text-center text-blue-600';
-                        }
-                    }
-                } catch (e) {
-                    console.error('轮询状态失败:', e);
-                }
-            }, 2000); // 每2秒轮询一次
+                    const r = await fetch(base + ROUTE_PREFIX + '/status', { headers: authHeaders() });
+                    if (r.ok) return base;
+                } catch (e) {}
+            }
+            return '/api/Plugin/ext/napcat-plugin-bilibili';
         }
 
-        // 停止轮询
-        function stopPolling() {
-            if (pollTimer) {
-                clearInterval(pollTimer);
-                pollTimer = null;
-            }
-            if (countdownTimer) {
-                clearInterval(countdownTimer);
-                countdownTimer = null;
-            }
+        let API_BASE_P = resolveApiBase();
+
+        async function authFetch(path, options = {}) {
+            const base = await API_BASE_P;
+            const res = await fetch(base + ROUTE_PREFIX + path, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers, ...authHeaders() }
+            });
+            return res.json();
         }
 
-        // 退出登录
-        async function logout() {
-            if (!confirm('确定要退出登录吗？')) return;
-
-            try {
-                const res = await authFetch('/login/logout', {
-                    method: 'POST'
-                });
-
-                if (res.code === 0) {
-                    // 重置界面
-                    document.getElementById('qrcode-placeholder').classList.remove('hidden');
-                    document.getElementById('qrcode-wrapper').classList.add('hidden');
-                    showLoginUI();
-                } else {
-                    alert('退出登录失败: ' + (res.message || '未知错误'));
-                }
-            } catch (e) {
-                console.error('退出登录失败:', e);
-                alert('退出登录失败');
-            }
+        function showToast(msg, type = 'info') {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = `toast ${type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`;
+            t.textContent = msg;
+            c.appendChild(t);
+            setTimeout(() => {
+                t.style.transform = 'translateX(120%)';
+                t.style.opacity = '0';
+                setTimeout(() => t.remove(), 300);
+            }, 3000);
         }
 
-        // 加载状态
         async function loadStatus() {
             try {
                 const res = await authFetch('/status');
                 if (res.code === 0) {
-                    const data = res.data;
-                    globalEnabled = data.config?.enabled !== false;
-
-                    document.getElementById('global-status').textContent = globalEnabled ? '已启用' : '已禁用';
-                    document.getElementById('global-status').className = globalEnabled
-                        ? 'text-xl font-bold text-green-700 mt-1'
-                        : 'text-xl font-bold text-red-700 mt-1';
-
-                    document.getElementById('uptime').textContent = data.uptimeFormatted || '未知';
-                    document.getElementById('uptime').classList.remove('loading');
-
+                    const { config, uptimeFormatted, stats } = res.data;
+                    globalEnabled = config.enabled !== false;
+                    
+                    const badge = document.getElementById('status-badge');
+                    badge.className = `ml-2 px-3 py-1 rounded-full text-xs font-bold border ${globalEnabled ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`;
+                    badge.textContent = globalEnabled ? '运行中' : '已暂停';
+                    
+                    document.getElementById('uptime').textContent = uptimeFormatted || '--';
                     document.getElementById('global-toggle').checked = globalEnabled;
+                    document.getElementById('send-mode').value = config.sendMode || 'info-only';
+                    document.getElementById('max-video-size').value = config.maxVideoSizeMB || 100;
+                    
+                    if (stats) {
+                        document.getElementById('stats-today').textContent = stats.todayParsed || 0;
+                        document.getElementById('stats-total').textContent = stats.totalParsed || 0;
+                    }
                 }
-            } catch (e) {
-                console.error('加载状态失败:', e);
-            }
+            } catch (e) {}
         }
 
-        // 加载群列表
         async function loadGroups() {
             try {
                 const res = await authFetch('/groups');
                 if (res.code === 0) {
                     groupsData = res.data || [];
-
-                    const enabledCount = groupsData.filter(g => g.biliEnabled !== false).length;
-                    document.getElementById('enabled-groups').textContent = enabledCount;
-                    document.getElementById('enabled-groups').classList.remove('loading');
-
-                    document.getElementById('total-groups').textContent = groupsData.length;
-                    document.getElementById('total-groups').classList.remove('loading');
-
+                    document.getElementById('total-groups').textContent = `共计扫描到 ${groupsData.length} 个群聊`;
+                    document.getElementById('enabled-groups').textContent = groupsData.filter(g => g.biliEnabled !== false).length;
                     renderGroups();
                 }
             } catch (e) {
-                console.error('加载群列表失败:', e);
-                document.getElementById('groups-loading').innerHTML = '<div class="text-red-500">加载失败</div>';
+                document.getElementById('groups-loading').innerHTML = '<div class="text-sm text-red-400 font-bold">拉取列表失败，请检查网络</div>';
             }
         }
 
-        // 渲染群列表
-        function renderGroups() {
+        function renderGroups(filter = '') {
             const container = document.getElementById('groups-container');
             const loading = document.getElementById('groups-loading');
             const empty = document.getElementById('groups-empty');
-
             loading.classList.add('hidden');
 
-            if (groupsData.length === 0) {
-                empty.classList.remove('hidden');
-                container.classList.add('hidden');
-                return;
+            const filtered = filter ? groupsData.filter(g => (g.group_name || '').toLowerCase().includes(filter.toLowerCase()) || String(g.group_id).includes(filter)) : groupsData;
+
+            if (filtered.length === 0) {
+                empty.classList.remove('hidden'); container.classList.add('hidden'); return;
             }
 
-            empty.classList.add('hidden');
-            container.classList.remove('hidden');
-
-            container.innerHTML = groupsData.map(group => `
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-500 font-bold">
-                            ${(group.group_name || '群')[0]}
-                        </div>
-                        <div>
-                            <div class="font-medium text-gray-700">${escapeHtml(group.group_name || '未知群')}</div>
-                            <div class="text-sm text-gray-400">${group.group_id}</div>
-                        </div>
+            empty.classList.add('hidden'); container.classList.remove('hidden');
+            container.innerHTML = filtered.map(g => `
+                <div class="group-item shadow-sm">
+                    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-sm font-bold text-blue-400 mr-4 flex-shrink-0 border border-blue-100">
+                        ${(g.group_name || 'G')[0]}
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" 
-                            ${group.biliEnabled !== false ? 'checked' : ''} 
-                            onchange="toggleGroup('${group.group_id}', this.checked)"
-                            ${!globalEnabled ? 'disabled' : ''}>
-                        <span class="toggle-slider ${!globalEnabled ? 'opacity-50 cursor-not-allowed' : ''}"></span>
+                    <div class="min-w-0 flex-1 mr-3">
+                        <div class="text-sm font-bold text-gray-700 truncate mb-0.5">${g.group_name || '未知群名'}</div>
+                        <div class="text-[10px] text-gray-400 font-mono tracking-wider">${g.group_id}</div>
+                    </div>
+                    <label class="toggle-switch flex-shrink-0">
+                        <input type="checkbox" ${g.biliEnabled !== false ? 'checked' : ''} ${!globalEnabled ? 'disabled' : ''} onchange="toggleGroup('${g.group_id}', this.checked)">
+                        <span class="toggle-slider"></span>
                     </label>
                 </div>
             `).join('');
         }
 
-        // 切换全局开关
+        function filterGroups() { renderGroups(document.getElementById('group-search').value.trim()); }
+
         async function toggleGlobal(enabled) {
             try {
-                const res = await authFetch('/config', {
-                    method: 'POST',
-                    body: JSON.stringify({ enabled })
-                });
-
+                const res = await authFetch('/config', { method: 'POST', body: JSON.stringify({ enabled }) });
                 if (res.code === 0) {
                     globalEnabled = enabled;
-                    document.getElementById('global-status').textContent = enabled ? '已启用' : '已禁用';
-                    document.getElementById('global-status').className = enabled
-                        ? 'text-xl font-bold text-green-700 mt-1'
-                        : 'text-xl font-bold text-red-700 mt-1';
-
-                    // 更新群列表开关状态
-                    renderGroups();
-                } else {
-                    alert('保存失败: ' + (res.message || '未知错误'));
-                    document.getElementById('global-toggle').checked = !enabled;
+                    loadStatus(); renderGroups();
+                    showToast(enabled ? '解析功能已开启' : '解析功能已暂停', 'success');
                 }
-            } catch (e) {
-                console.error('切换全局开关失败:', e);
-                alert('操作失败');
-                document.getElementById('global-toggle').checked = !enabled;
-            }
+            } catch (e) { document.getElementById('global-toggle').checked = !enabled; }
         }
 
-        // 切换群开关
+        async function updateConfig() {
+            const sendMode = document.getElementById('send-mode').value;
+            const maxVideoSizeMB = parseInt(document.getElementById('max-video-size').value) || 100;
+            try {
+                const res = await authFetch('/config', { method: 'POST', body: JSON.stringify({ sendMode, maxVideoSizeMB }) });
+                if (res.code === 0) showToast('设置保存成功', 'success');
+            } catch (e) {}
+        }
+
         async function toggleGroup(groupId, enabled) {
             try {
-                const res = await authFetch(`/groups/${groupId}/config`, {
-                    method: 'POST',
-                    body: JSON.stringify({ enabled })
-                });
-
+                const res = await authFetch(`/groups/${groupId}/config`, { method: 'POST', body: JSON.stringify({ enabled }) });
                 if (res.code === 0) {
-                    // 更新本地数据
-                    const group = groupsData.find(g => String(g.group_id) === String(groupId));
-                    if (group) {
-                        group.biliEnabled = enabled;
-                    }
-
-                    // 更新统计
-                    const enabledCount = groupsData.filter(g => g.biliEnabled !== false).length;
-                    document.getElementById('enabled-groups').textContent = enabledCount;
-                } else {
-                    alert('保存失败: ' + (res.message || '未知错误'));
-                    // 恢复原状态
-                    loadGroups();
+                    const g = groupsData.find(x => String(x.group_id) === String(groupId));
+                    if (g) g.biliEnabled = enabled;
+                    document.getElementById('enabled-groups').textContent = groupsData.filter(x => x.biliEnabled !== false).length;
                 }
-            } catch (e) {
-                console.error('切换群开关失败:', e);
-                alert('操作失败');
-                loadGroups();
+            } catch (e) { loadGroups(); }
+        }
+
+        async function toggleAllGroups(enabled) {
+            if (!confirm(`确定要批量${enabled ? '启用' : '禁用'}所有选中的群聊吗？`)) return;
+            for (const g of groupsData) {
+                try {
+                    await authFetch(`/groups/${g.group_id}/config`, { method: 'POST', body: JSON.stringify({ enabled }) });
+                    g.biliEnabled = enabled;
+                } catch (e) {}
             }
+            document.getElementById('enabled-groups').textContent = groupsData.filter(x => x.biliEnabled !== false).length;
+            renderGroups();
+            showToast('批量同步成功', 'success');
         }
 
-        // HTML 转义
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        async function checkLoginStatus() {
+            try {
+                const res = await authFetch('/login/status');
+                document.getElementById('login-loading').classList.add('hidden');
+                if (res.code === 0 && res.data?.isLoggedIn) showLoggedInUI(res.data.userInfo);
+                else showLoginUI();
+            } catch (e) { document.getElementById('login-loading').classList.add('hidden'); showLoginUI(); }
         }
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            loadStatus();
-            loadGroups();
-            checkLoginStatus();
+        function showLoginUI() {
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('logged-in-section').classList.add('hidden');
+        }
 
-            // 定时刷新运行时长
-            setInterval(loadStatus, 60000);
-        });
+        function showLoggedInUI(u) {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('logged-in-section').classList.remove('hidden');
+            document.getElementById('user-avatar').src = u.face || '';
+            document.getElementById('user-name').textContent = u.uname || '未知用户';
+            document.getElementById('user-uid').textContent = 'UID: ' + (u.mid || '--');
+            document.getElementById('user-level').textContent = u.level_info?.current_level || 0;
+            document.getElementById('user-exp-current').textContent = u.level_info?.current_exp || 0;
+            const next = u.level_info?.next_exp;
+            document.getElementById('user-exp-next').textContent = typeof next === 'number' ? next : 'MAX';
+            document.getElementById('user-level-progress').style.width = (typeof next === 'number' ? (u.level_info.current_exp / next * 100) : 100) + '%';
+            document.getElementById('user-money').textContent = u.money ?? '--';
+            document.getElementById('user-follower').textContent = u.relation_stat?.follower >= 10000 ? (u.relation_stat.follower/10000).toFixed(1)+'万' : (u.relation_stat?.follower ?? '--');
+            document.getElementById('user-moral').textContent = u.moral ?? '--';
+            if (u.vip?.status === 1) document.getElementById('user-vip').classList.remove('hidden');
+        }
 
-        // 页面离开时停止轮询
-        window.addEventListener('beforeunload', () => {
+        async function generateQrCode() {
             stopPolling();
-        });
+            document.getElementById('qrcode-placeholder').classList.add('hidden');
+            document.getElementById('qrcode-wrapper').classList.remove('hidden');
+            document.getElementById('qrcode-status').textContent = '二维码生成中...';
+            try {
+                const res = await authFetch('/login/qrcode/generate', { method: 'POST' });
+                if (res.code === 0) {
+                    qrcodeKey = res.data.qrcode_key;
+                    document.getElementById('qrcode-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(res.data.url);
+                    document.getElementById('qrcode-status').textContent = '请扫码登录';
+                    remainingTime = 180; startCountdown(); startPolling();
+                }
+            } catch (e) {}
+        }
+
+        function startCountdown() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            countdownTimer = setInterval(() => { if (--remainingTime <= 0) stopPolling(); }, 1000);
+        }
+
+        function startPolling() {
+            if (pollTimer) clearInterval(pollTimer);
+            pollTimer = setInterval(async () => {
+                try {
+                    const res = await authFetch('/login/qrcode/poll?qrcode_key=' + encodeURIComponent(qrcodeKey));
+                    if (res.code === 0 && res.data?.isSuccess) {
+                        stopPolling(); showToast('登录成功', 'success'); checkLoginStatus();
+                    }
+                } catch (e) {}
+            }, 2000);
+        }
+
+        function stopPolling() { clearInterval(pollTimer); clearInterval(countdownTimer); }
+
+        async function logout() {
+            if (!confirm('确定要退出当前账号吗？此操作不可撤销。')) return;
+            try {
+                const res = await authFetch('/login/logout', { method: 'POST' });
+                if (res.code === 0) { showLoginUI(); showToast('账号已退出'); }
+            } catch (e) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { loadStatus(); loadGroups(); checkLoginStatus(); setInterval(loadStatus, 30000); });
+        window.addEventListener('beforeunload', stopPolling);
     </script>
 </body>
 
