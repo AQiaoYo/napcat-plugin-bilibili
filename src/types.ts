@@ -6,11 +6,22 @@
 import type { PluginConfigSchema, PluginConfigUIController } from 'napcat-types/napcat-onebot/network/plugin-manger';
 
 /**
+ * 发送模式枚举
+ * - info-only: 仅发送视频信息卡片
+ * - with-video: 发送视频信息卡片 + 视频文件
+ */
+export type SendMode = 'info-only' | 'with-video';
+
+/**
  * 插件主配置接口
  */
 export interface PluginConfig {
     /** 全局开关：是否启用 B 站链接解析功能 */
     enabled: boolean;
+    /** 发送模式：info-only 仅发送信息卡片，with-video 发送信息卡片+视频 */
+    sendMode: SendMode;
+    /** 最大视频大小限制 (MB)，超过此大小不下载视频 */
+    maxVideoSizeMB: number;
     /** 按群的单独配置 */
     groupConfigs?: Record<string, GroupBilibiliConfig>;
 }
@@ -31,6 +42,8 @@ export interface BilibiliVideoInfo {
     bvid: string;
     /** AV 号 */
     aid: number;
+    /** 视频 CID（默认分P） */
+    cid: number;
     /** 视频标题 */
     title: string;
     /** 视频封面 URL */
@@ -39,6 +52,13 @@ export interface BilibiliVideoInfo {
     desc: string;
     /** 视频时长（秒） */
     duration: number;
+    /** 分P列表 */
+    pages?: Array<{
+        cid: number;
+        page: number;
+        part: string;
+        duration: number;
+    }>;
     /** UP 主信息 */
     owner: {
         mid: number;
