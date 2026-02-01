@@ -12,7 +12,6 @@ import {
     parseAndFetchVideoInfo,
     parseAndFetchVideoWithDownload,
     buildVideoMessage,
-    buildVideoMessageWithFile,
     downloadVideo,
     cleanupTempVideo
 } from '../services/bilibili-service';
@@ -140,8 +139,8 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
                 }
             }
 
-            // 构建消息（不含视频，如果使用群文件方式）
-            messageContent = buildVideoMessageWithFile(videoInfo, useGroupFile ? null : videoFilePath);
+            // 构建信息卡片消息（不含视频）
+            messageContent = buildVideoMessage(videoInfo);
         } else {
             // 模式：仅发送信息卡片
             const videoInfo = await parseAndFetchVideoInfo(rawMessage);
@@ -154,14 +153,28 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
             messageContent = buildVideoMessage(videoInfo);
         }
 
-        // 发送消息到群
+        // 第一步：发送信息卡片到群
         const success = await sendGroupMessage(ctx, groupId, messageContent);
-
         if (success) {
-            pluginState.log('info', `视频信息已发送到群 ${groupId}${videoFilePath && !useGroupFile ? ' (含视频)' : ''}`);
+            pluginState.log('info', `视频信息卡片已发送到群 ${groupId}`);
         }
 
-        // 如果使用群文件方式，上传视频到群文件
+        // 第二步：单独发送视频（如果有）
+        if (videoFilePath && !useGroupFile) {
+            // 等待一小段时间，避免消息发送过快
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const videoMessage = [{
+                type: 'video',
+                data: { file: videoFilePath }
+            }];
+            const videoSuccess = await sendGroupMessage(ctx, groupId, videoMessage);
+            if (videoSuccess) {
+                pluginState.log('info', `视频已单独发送到群 ${groupId}`);
+            }
+        }
+
+        // 第三步：如果使用群文件方式，上传视频到群文件
         if (useGroupFile && videoFilePath) {
             const fileName = `bilibili_${Date.now()}.mp4`;
             const uploadSuccess = await uploadGroupFile(ctx, groupId, videoFilePath, fileName);
