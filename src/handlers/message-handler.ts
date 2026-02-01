@@ -9,6 +9,7 @@ import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plu
 import { pluginState } from '../core/state';
 import {
     containsBilibiliLink,
+    extractVideoId,
     parseAndFetchVideoInfo,
     parseAndFetchVideoWithDownload,
     buildVideoMessage,
@@ -95,6 +96,31 @@ function buildForwardNode(userId: string, nickname: string, content: Array<{ typ
 }
 
 /**
+ * 设置消息表情回复
+ * @param ctx 插件上下文
+ * @param messageId 消息 ID
+ * @param emojiId 表情 ID（10024: 闪光, 124: ok）
+ */
+async function setMsgEmojiLike(ctx: NapCatPluginContext, messageId: number | string, emojiId: string): Promise<boolean> {
+    try {
+        await ctx.actions.call(
+            'set_msg_emoji_like',
+            {
+                message_id: messageId,
+                emoji_id: emojiId
+            },
+            ctx.adapterName,
+            ctx.pluginManager.config
+        );
+        pluginState.logDebug(`设置表情回复成功: message_id=${messageId}, emoji_id=${emojiId}`);
+        return true;
+    } catch (error) {
+        pluginState.log('error', `设置表情回复失败:`, error);
+        return false;
+    }
+}
+
+/**
  * 上传群文件（用于超过 100MB 的视频）
  * @param ctx 插件上下文
  * @param groupId 群号
@@ -154,6 +180,33 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
         }
 
         pluginState.logDebug(`检测到 B 站链接 | 群: ${groupId} | 消息: ${rawMessage.substring(0, 100)}`);
+
+        // 提取视频 ID 用于去重检查
+        const videoId = await extractVideoId(rawMessage);
+        if (!videoId) {
+            pluginState.logDebug(`无法提取视频 ID，跳过`);
+            return;
+        }
+
+        // 检查是否在缓存中（防止重复解析）
+        const cacheTTL = pluginState.config.parseCacheTTL ?? 300;
+        if (cacheTTL > 0 && pluginState.isInParseCache(String(groupId), videoId)) {
+            pluginState.logDebug(`视频 ${videoId} 在群 ${groupId} 中已解析过，跳过重复解析`);
+            return;
+        }
+
+        // 添加到解析缓存
+        if (cacheTTL > 0) {
+            pluginState.addToParseCache(String(groupId), videoId);
+        }
+
+        // 获取消息 ID 用于表情回复
+        const messageId = event.message_id;
+
+        // 贴一个"闪光"表情表示开始解析
+        if (messageId) {
+            await setMsgEmojiLike(ctx, messageId, '10024');
+        }
 
         // 获取发送模式配置
         const sendMode = pluginState.config.sendMode || 'info-only';
@@ -252,6 +305,11 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
             if (uploadSuccess) {
                 pluginState.log('info', `视频已上传到群文件: ${fileName}`);
             }
+        }
+
+        // 解析完成，贴一个"ok"表情表示完成
+        if (messageId) {
+            await setMsgEmojiLike(ctx, messageId, '124');
         }
 
         // 清理临时视频文件（延迟清理，确保消息/文件已发送）
