@@ -18,6 +18,11 @@ import {
     cleanupTempVideo,
     extractLinkFromSegments
 } from '../services/bilibili-service';
+import {
+    isPuppeteerAvailable,
+    renderVideoCard,
+    buildRenderedImageMessage
+} from '../services/puppeteer-render-service';
 
 /**
  * 发送群消息
@@ -225,6 +230,8 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
         let messageContent: Array<{ type: string; data: any }>;
         let videoFilePath: string | null = null;
         let useGroupFile = false; // 是否使用群文件方式发送
+        let usePuppeteerRender = false; // 是否使用 puppeteer 渲染
+        let videoInfo: any = null; // 视频信息
 
         if (sendMode === 'with-video') {
             // 模式：发送信息卡片 + 视频
@@ -234,7 +241,8 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
                 return;
             }
 
-            const { videoInfo, playUrl } = result;
+            videoInfo = result.videoInfo;
+            const { playUrl } = result;
             pluginState.log('info', `解析视频成功: ${videoInfo.title} (${videoInfo.bvid})`);
 
             // 尝试下载视频
@@ -255,18 +263,45 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
                     videoFilePath = await downloadVideo(playUrl.videoUrl, videoInfo.bvid, maxVideoSizeMB);
                 }
             }
-
-            // 构建信息卡片消息（不含视频）
-            messageContent = buildVideoMessage(videoInfo);
         } else {
             // 模式：仅发送信息卡片
-            const videoInfo = await parseAndFetchVideoInfo(rawMessage);
+            videoInfo = await parseAndFetchVideoInfo(rawMessage);
             if (!videoInfo) {
                 pluginState.logDebug(`无法获取视频信息，跳过`);
                 return;
             }
 
             pluginState.log('info', `解析视频成功: ${videoInfo.title} (${videoInfo.bvid})`);
+        }
+
+        // 尝试使用 Puppeteer 渲染视频卡片
+        pluginState.logDebug(`Puppeteer 配置状态: enabled=${pluginState.config.puppeteer?.enabled}, webUIUrl=${pluginState.config.puppeteer?.webUIUrl}`);
+
+        if (pluginState.config.puppeteer?.enabled) {
+            pluginState.logDebug('尝试使用 Puppeteer 渲染视频卡片...');
+            const puppeteerAvailable = await isPuppeteerAvailable();
+            pluginState.logDebug(`Puppeteer 可用性检查结果: ${puppeteerAvailable}`);
+
+            if (puppeteerAvailable) {
+                pluginState.logDebug('开始调用 renderVideoCard...');
+                const renderResult = await renderVideoCard(videoInfo);
+                pluginState.logDebug(`renderVideoCard 结果: success=${renderResult.success}, error=${renderResult.error || 'none'}, hasImage=${!!renderResult.imageBase64}`);
+
+                if (renderResult.success && renderResult.imageBase64) {
+                    pluginState.log('info', '使用 Puppeteer 渲染视频卡片成功');
+                    messageContent = buildRenderedImageMessage(renderResult.imageBase64, videoInfo);
+                    usePuppeteerRender = true;
+                } else {
+                    pluginState.log('warn', `Puppeteer 渲染失败: ${renderResult.error}，回退到文本模式`);
+                    messageContent = buildVideoMessage(videoInfo);
+                }
+            } else {
+                pluginState.logDebug('Puppeteer 不可用，使用文本模式');
+                messageContent = buildVideoMessage(videoInfo);
+            }
+        } else {
+            pluginState.logDebug('Puppeteer 未启用，使用文本模式');
+            // 不使用 Puppeteer，直接构建文本消息
             messageContent = buildVideoMessage(videoInfo);
         }
 
@@ -281,20 +316,26 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
         // 构建合并转发消息节点
         const forwardNodes: ForwardNode[] = [];
 
-        // 获取分离的消息内容（封面、信息、视频分别作为不同节点）
-        const separatedMessages = buildVideoInfoMessages(messageContent);
+        if (usePuppeteerRender) {
+            // 使用 Puppeteer 渲染的图片模式
+            // 节点1：渲染的视频卡片图片 + 链接
+            forwardNodes.push(buildForwardNode(botUserId, botNickname, messageContent));
+        } else {
+            // 文本模式：获取分离的消息内容（封面、信息、视频分别作为不同节点）
+            const separatedMessages = buildVideoInfoMessages(messageContent);
 
-        // 节点1：封面图片（如果有）
-        if (separatedMessages.cover) {
-            forwardNodes.push(buildForwardNode(botUserId, botNickname, [separatedMessages.cover]));
+            // 节点1：封面图片（如果有）
+            if (separatedMessages.cover) {
+                forwardNodes.push(buildForwardNode(botUserId, botNickname, [separatedMessages.cover]));
+            }
+
+            // 节点2：视频信息文本
+            if (separatedMessages.info) {
+                forwardNodes.push(buildForwardNode(botUserId, botNickname, [separatedMessages.info]));
+            }
         }
 
-        // 节点2：视频信息文本
-        if (separatedMessages.info) {
-            forwardNodes.push(buildForwardNode(botUserId, botNickname, [separatedMessages.info]));
-        }
-
-        // 节点3：视频文件（如果有，且不需要群文件方式发送）
+        // 节点：视频文件（如果有，且不需要群文件方式发送）
         if (videoFilePath && !useGroupFile) {
             forwardNodes.push(buildForwardNode(botUserId, botNickname, [{
                 type: 'video',
