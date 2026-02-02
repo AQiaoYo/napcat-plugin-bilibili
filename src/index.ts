@@ -138,7 +138,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                                 pluginState.log('error', '解析全局配置 Body 失败:', e);
                             }
                         }
-                        
+
                         pluginState.setConfig(ctx, (body || {}) as any);
                         pluginState.log('info', '配置已保存');
                         res.json({ code: 0, message: 'ok' });
@@ -204,9 +204,9 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                             const gid = String(groupId);
                             currentGroupConfigs[gid] = { ...currentGroupConfigs[gid], enabled };
                         }
-                        
+
                         pluginState.setConfig(ctx, { groupConfigs: currentGroupConfigs });
-                        
+
                         pluginState.log('info', `批量更新群配置完成 | 数量: ${groupIds.length}, enabled=${enabled}`);
                         res.json({ code: 0, message: 'ok' });
                     } catch (err) {
@@ -375,7 +375,8 @@ export const plugin_get_config = async (ctx: NapCatPluginContext) => {
 
 /** 设置配置（完整替换） */
 export const plugin_set_config = async (ctx: NapCatPluginContext, config: any) => {
-    pluginState.saveConfig(ctx, config);
+    pluginState.logDebug(`plugin_set_config 调用: ${JSON.stringify(config)}`);
+    pluginState.replaceConfig(ctx, config);
     pluginState.log('info', '配置已通过 API 更新');
 };
 
@@ -391,7 +392,8 @@ export const plugin_on_config_change = async (
     currentConfig?: Record<string, any>
 ) => {
     try {
-        pluginState.setConfig(ctx, { [key]: value } as any);
+        pluginState.logDebug(`plugin_on_config_change: key=${key}, value=${JSON.stringify(value)}`);
+        pluginState.setConfig(ctx, { [key]: value });
         pluginState.logDebug(`配置项 ${key} 已更新`);
     } catch (err) {
         pluginState.log('error', `更新配置项 ${key} 失败:`, err);

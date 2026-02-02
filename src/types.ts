@@ -13,11 +13,23 @@ import type { PluginConfigSchema, PluginConfigUIController } from 'napcat-types/
 export type SendMode = 'info-only' | 'with-video';
 
 /**
+ * Puppeteer 渲染配置
+ */
+export interface PuppeteerRenderConfig {
+    /** 是否启用 Puppeteer 渲染（需要安装 napcat-plugin-puppeteer 插件） */
+    enabled: boolean;
+    /** NapCat WebUI 地址（用于调用 Puppeteer API），默认 http://127.0.0.1:6099 */
+    webUIUrl?: string;
+}
+
+/**
  * 插件主配置接口
  */
 export interface PluginConfig {
     /** 全局开关：是否启用 B 站链接解析功能 */
     enabled: boolean;
+    /** 调试模式：启用后输出详细日志 */
+    debug: boolean;
     /** 发送模式：info-only 仅发送信息卡片，with-video 发送信息卡片+视频 */
     sendMode: SendMode;
     /** 最大视频大小限制 (MB)，超过此大小不下载视频 */
@@ -28,6 +40,8 @@ export interface PluginConfig {
     credential?: BilibiliCredential;
     /** 按群的单独配置 */
     groupConfigs?: Record<string, GroupBilibiliConfig>;
+    /** Puppeteer 渲染配置 */
+    puppeteer?: PuppeteerRenderConfig;
 }
 
 /**

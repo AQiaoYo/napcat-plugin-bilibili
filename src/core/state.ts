@@ -9,7 +9,7 @@ import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-oneb
 import type { ActionMap } from 'napcat-types/napcat-onebot/action/index';
 import type { NetworkAdapterConfig } from 'napcat-types/napcat-onebot/config/config';
 import { DEFAULT_CONFIG, getDefaultConfig } from '../config';
-import type { PluginConfig, GroupBilibiliConfig, SendMode, BilibiliCredential } from '../types';
+import type { PluginConfig, GroupBilibiliConfig, SendMode, BilibiliCredential, PuppeteerRenderConfig } from '../types';
 import { encryptString, decryptString } from '../utils/crypto-utils';
 
 /** 日志前缀 */
@@ -32,6 +32,11 @@ function sanitizeConfig(raw: unknown): PluginConfig {
     // enabled
     if (typeof (raw as Record<string, unknown>)['enabled'] === 'boolean') {
         out.enabled = (raw as Record<string, unknown>)['enabled'] as boolean;
+    }
+
+    // debug
+    if (typeof (raw as Record<string, unknown>)['debug'] === 'boolean') {
+        out.debug = (raw as Record<string, unknown>)['debug'] as boolean;
     }
 
     // sendMode
@@ -90,6 +95,23 @@ function sanitizeConfig(raw: unknown): PluginConfig {
         }
     }
 
+    // puppeteer (Puppeteer 渲染配置)
+    const rawPuppeteer = (raw as Record<string, unknown>)['puppeteer'];
+    if (isObject(rawPuppeteer)) {
+        const puppeteerConfig: PuppeteerRenderConfig = {
+            enabled: false,
+            webUIUrl: 'http://127.0.0.1:6099',
+        };
+        const p = rawPuppeteer as Record<string, unknown>;
+        if (typeof p['enabled'] === 'boolean') {
+            puppeteerConfig.enabled = p['enabled'];
+        }
+        if (typeof p['webUIUrl'] === 'string' && p['webUIUrl']) {
+            puppeteerConfig.webUIUrl = p['webUIUrl'];
+        }
+        out.puppeteer = puppeteerConfig;
+    }
+
     return out;
 }
 
@@ -143,10 +165,13 @@ class PluginState {
 
     /**
      * 调试日志
+     * 只有当 debug 配置开启时才输出
      */
     logDebug(msg: string, ...args: unknown[]): void {
-        if (this.logger?.debug) {
-            this.logger.debug(`${LOG_TAG} ${msg}`, ...args);
+        // 检查 debug 配置是否开启
+        if (!this.config.debug) return;
+        if (this.logger) {
+            this.logger.info(`${LOG_TAG} [DEBUG] ${msg}`, ...args);
         }
     }
 
@@ -292,10 +317,82 @@ class PluginState {
     }
 
     /**
-     * 合并并设置配置
+     * 设置嵌套的配置值
+     * 支持点号分隔的 key，如 'puppeteer.enabled'
      */
-    setConfig(ctx: NapCatPluginContext | undefined, partialConfig: Partial<PluginConfig>): void {
-        this.config = { ...this.config, ...partialConfig } as PluginConfig;
+    private setNestedValue(obj: any, key: string, value: any): void {
+        const keys = key.split('.');
+        let current = obj;
+
+        for (let i = 0; i < keys.length - 1; i++) {
+            const k = keys[i];
+            if (!(k in current) || typeof current[k] !== 'object') {
+                current[k] = {};
+            }
+            current = current[k];
+        }
+
+        current[keys[keys.length - 1]] = value;
+    }
+
+    /**
+     * 展平嵌套的配置对象
+     * 将 { 'puppeteer.enabled': true } 转换为 { puppeteer: { enabled: true } }
+     */
+    private unflattenConfig(flatConfig: Record<string, any>): Record<string, any> {
+        const result: Record<string, any> = {};
+
+        for (const [key, value] of Object.entries(flatConfig)) {
+            if (key.includes('.')) {
+                this.setNestedValue(result, key, value);
+            } else {
+                result[key] = value;
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * 深度合并配置对象
+     */
+    private deepMerge(target: any, source: any): any {
+        const result = { ...target };
+
+        for (const key of Object.keys(source)) {
+            if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                result[key] = this.deepMerge(result[key] || {}, source[key]);
+            } else {
+                result[key] = source[key];
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * 合并并设置配置
+     * 支持点号分隔的嵌套 key
+     */
+    setConfig(ctx: NapCatPluginContext | undefined, partialConfig: Partial<PluginConfig> | Record<string, any>): void {
+        // 展平嵌套的 key
+        const unflattened = this.unflattenConfig(partialConfig as Record<string, any>);
+        // 深度合并配置
+        this.config = this.deepMerge(this.config, unflattened) as PluginConfig;
+        this.logDebug(`配置已更新: ${JSON.stringify(partialConfig)}`);
+        if (ctx) this.saveConfig(ctx);
+    }
+
+    /**
+     * 完整替换配置
+     * 用于 plugin_set_config 调用
+     */
+    replaceConfig(ctx: NapCatPluginContext | undefined, newConfig: Record<string, any>): void {
+        // 展平嵌套的 key
+        const unflattened = this.unflattenConfig(newConfig);
+        // 从默认配置开始，深度合并新配置
+        this.config = this.deepMerge(getDefaultConfig(), unflattened) as PluginConfig;
+        this.logDebug(`配置已替换: ${JSON.stringify(Object.keys(newConfig))}`);
         if (ctx) this.saveConfig(ctx);
     }
 
