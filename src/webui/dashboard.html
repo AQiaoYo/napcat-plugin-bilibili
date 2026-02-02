@@ -1682,7 +1682,8 @@
 
     <script>
         const ROUTE_PREFIX = '/bilibili';
-        const token = new URLSearchParams(window.location.search).get('webui_token') || '';
+        // 从 localStorage 获取 token（NapCat WebUI 鉴权方式）
+        const token = localStorage.getItem('token') || '';
         let groupsData = [];
         let globalEnabled = true;
         let qrcodeKey = null;
