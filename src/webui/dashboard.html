@@ -5,7 +5,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>B站视频解析 · 控制台</title>
-    <script src="static/plugin-info.js"></script>
+    <!-- plugin-info.js 由后端动态生成，设置 window.__PLUGIN_NAME__ -->
+    <!-- 使用 onerror 防止加载失败时阻塞页面，resolvePluginName() 有 fallback 逻辑 -->
+    <script src="static/plugin-info.js" onerror="console.warn('plugin-info.js 加载失败，将使用 fallback 逻辑')"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -16,85 +18,119 @@
                         bili: {
                             pink: '#FB7299',
                             blue: '#00A1D6',
-                            dark: '#18191C',
-                            gray: '#F4F4F4',
-                        },
-                        primary: '#FB7299',
+                        }
                     }
                 }
             }
         }
     </script>
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        :root {
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             box-sizing: border-box;
         }
 
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
-            background: #f0f2f5;
-            color: #1f2937;
-            font-size: 16px;
-            transition: background 0.4s ease, color 0.4s ease;
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
 
-        html.dark,
-        html.dark body {
-            background: #18191C;
-            color: #e5e7eb;
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        .app-layout {
-            display: grid;
-            grid-template-rows: auto 1fr;
-            height: 100vh;
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
         }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-            padding: 16px;
-            min-height: 0;
-            overflow-y: auto;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
 
-        /* 中等屏幕：左侧固定宽度 */
-        @media (min-width: 768px) {
-            .main-content {
-                grid-template-columns: 280px 1fr;
-                overflow-y: hidden;
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+        }
+
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.7);
+        }
+
+        /* 卡片悬浮效果 */
+        .card-hover {
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 按钮交互效果 */
+        .btn-interactive {
+            transition: all 0.2s var(--ease-spring);
+        }
+
+        .btn-interactive:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-interactive:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* 侧边栏项目动效 */
+        .sidebar-link {
+            transition: all 0.2s var(--ease-smooth);
+        }
+
+        .sidebar-link:hover {
+            background: rgba(251, 114, 153, 0.08);
+        }
+
+        .sidebar-link.active {
+            background: rgba(251, 114, 153, 0.1);
+        }
+
+        /* 输入框聚焦动效 */
+        .input-focus {
+            transition: all 0.2s var(--ease-smooth);
+        }
+
+        .input-focus:focus {
+            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.2);
+        }
+
+        /* 淡入动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        /* 大屏幕：左侧更宽 */
-        @media (min-width: 1024px) {
-            .main-content {
-                grid-template-columns: 320px 1fr;
-            }
-        }
-
-        /* 超大屏幕：恢复百分比布局 */
-        @media (min-width: 1280px) {
-            .main-content {
-                grid-template-columns: 25% 1fr;
-            }
-        }
-
-        /* ========== 动画系统 ========== */
-
-        /* 缓动函数 */
-        :root {
-            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-            --ease-out-back: cubic-bezier(0.34, 1.2, 0.64, 1);
-            --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-        }
-
-        /* 页面加载淡入动画 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -107,7 +143,7 @@
             }
         }
 
-        @keyframes fadeInScale {
+        @keyframes scaleIn {
             from {
                 opacity: 0;
                 transform: scale(0.95);
@@ -119,214 +155,123 @@
             }
         }
 
-        @keyframes slideInFromLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .animate-fade-in {
+            animation: fadeIn 0.4s var(--ease-spring) both;
         }
 
-        @keyframes slideInFromRight {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s var(--ease-spring) both;
         }
 
-        /* Header 滑入 */
-        header {
-            animation: fadeInUp 0.6s var(--ease-smooth) both;
+        .animate-scale-in {
+            animation: scaleIn 0.3s var(--ease-spring) both;
         }
 
-        /* Header 响应式 */
-        @media (max-width: 767px) {
-            header {
-                flex-direction: column;
-                gap: 12px;
-                padding: 12px 16px;
-            }
-
-            header>div:first-child {
-                width: 100%;
-                justify-content: center;
-            }
-
-            header>div:last-child {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .top-stat-item {
-                padding: 0 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .top-stat-item {
-                padding: 0 8px;
-            }
-
-            .top-stat-item span:first-child {
-                font-size: 10px;
-            }
-
-            .top-stat-item .stat-number,
-            .top-stat-item span:last-child {
-                font-size: 14px;
-            }
-        }
-
-        /* 侧边栏卡片动画 */
-        .sidebar>.glass-card:nth-child(1) {
-            animation: slideInFromLeft 0.5s var(--ease-out-back) 0.1s both;
-        }
-
-        .sidebar>.glass-card:nth-child(2) {
-            animation: slideInFromLeft 0.5s var(--ease-out-back) 0.2s both;
-        }
-
-        /* 主区域卡片动画 */
-        .main-content>section.glass-card {
-            animation: slideInFromRight 0.5s var(--ease-out-back) 0.15s both;
-        }
-
-        /* 统一卡片 */
-        .glass-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e5e7eb;
-            display: flex;
-            flex-direction: column;
-            transition: background 0.4s ease, border-color 0.4s ease, transform 0.3s var(--ease-spring), box-shadow 0.3s ease;
-        }
-
-        .glass-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-        }
-
-        .dark .glass-card {
-            background: #2a2b2e;
-            border-color: #3f4045;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .dark .glass-card:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        }
-
-        /* 侧边栏垂直布局 */
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            min-height: 0;
-            overflow-y: auto;
-            padding-right: 4px;
-        }
-
-        /* 小屏幕时侧边栏不需要滚动，由主容器滚动 */
-        @media (max-width: 767px) {
-            .sidebar {
-                overflow-y: visible;
-                flex-shrink: 0;
-            }
-        }
-
-        /* 滚动条美化 */
-        .sidebar::-webkit-scrollbar,
-        .scroll-area::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb,
-        .scroll-area::-webkit-scrollbar-thumb {
-            background: #e5e7eb;
-            border-radius: 10px;
-            transition: background 0.3s;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb:hover,
-        .scroll-area::-webkit-scrollbar-thumb:hover {
-            background: #FB7299;
-        }
-
-        .dark .sidebar::-webkit-scrollbar-thumb,
-        .dark .scroll-area::-webkit-scrollbar-thumb {
-            background: #4a4b50;
-        }
-
-        .account-mini {
-            padding: 16px;
-        }
-
-        /* 顶部状态条 */
-        .top-stat-item {
-            padding: 0 24px;
-            border-right: 1px solid #e5e7eb;
-            transition: transform 0.2s var(--ease-spring);
-        }
-
-        .top-stat-item:hover {
-            transform: scale(1.05);
-        }
-
-        .dark .top-stat-item {
-            border-color: #3f4045;
-        }
-
-        .top-stat-item:last-child {
-            border-right: none;
-        }
-
-        /* 统计数字动画 */
+        /* 数字变化动画 */
         .stat-number {
-            display: inline-block;
-            transition: transform 0.3s var(--ease-spring), color 0.3s;
+            transition: all 0.3s var(--ease-smooth);
         }
 
-        .stat-number.updating {
-            animation: numberPop 0.4s var(--ease-spring);
-        }
+        /* 状态点脉冲动画 */
+        @keyframes pulse {
 
-        @keyframes numberPop {
-            0% {
-                transform: scale(1);
+            0%,
+            100% {
+                opacity: 1;
             }
 
             50% {
-                transform: scale(1.2);
-                color: #FB7299;
-            }
-
-            100% {
-                transform: scale(1);
+                opacity: 0.5;
             }
         }
 
-        /* 群列表容器 */
-        .scroll-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
+        .status-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
-        /* 开关美化 - 增强弹性动画 */
+        /* 加载旋转动画优化 */
+        @keyframes spin-smooth {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin-smooth {
+            animation: spin-smooth 1s linear infinite;
+        }
+
+        /* Toast 消息弹窗 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            animation: toastIn 0.5s var(--ease-spring) both;
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+        }
+
+        .toast.hiding {
+            animation: toastOut 0.4s var(--ease-smooth) both;
+        }
+
+        .toast.toast-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .toast.toast-error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .toast.toast-info {
+            background: linear-gradient(135deg, #FB7299 0%, #e05a80 100%);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%) scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%) scale(0.8);
+            }
+        }
+
+        /* ========== 开关美化 - 旧版样式 ========== */
         .toggle-switch {
             position: relative;
             width: 48px;
             height: 24px;
+            flex-shrink: 0;
         }
 
         .toggle-switch input {
@@ -381,117 +326,7 @@
             box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.3);
         }
 
-        /* Toast - 增强动画 */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-        }
-
-        .toast {
-            padding: 12px 24px;
-            border-radius: 12px;
-            color: white;
-            margin-bottom: 8px;
-            font-size: 14px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            animation: toastIn 0.5s var(--ease-spring) both;
-            backdrop-filter: blur(8px);
-        }
-
-        .toast.hiding {
-            animation: toastOut 0.4s var(--ease-smooth) both;
-        }
-
-        @keyframes toastIn {
-            from {
-                opacity: 0;
-                transform: translateX(100%) scale(0.8);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0) scale(1);
-            }
-        }
-
-        @keyframes toastOut {
-            from {
-                opacity: 1;
-                transform: translateX(0) scale(1);
-            }
-
-            to {
-                opacity: 0;
-                transform: translateX(100%) scale(0.8);
-            }
-        }
-
-        /* 自定义 Tooltip */
-        .custom-tooltip {
-            position: relative;
-        }
-
-        .custom-tooltip::before,
-        .custom-tooltip::after {
-            position: absolute;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s var(--ease-spring);
-            pointer-events: none;
-        }
-
-        .custom-tooltip::before {
-            content: attr(data-tooltip);
-            top: calc(100% + 10px);
-            right: 0;
-            transform: translateY(-5px);
-            padding: 8px 14px;
-            background: linear-gradient(135deg, #FB7299 0%, #e85a81 100%);
-            color: white;
-            font-size: 12px;
-            font-weight: 500;
-            white-space: nowrap;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(251, 114, 153, 0.35);
-            z-index: 100;
-        }
-
-        .custom-tooltip::after {
-            content: '';
-            top: calc(100% + 4px);
-            right: 12px;
-            transform: translateY(-5px);
-            border: 6px solid transparent;
-            border-bottom-color: #FB7299;
-            z-index: 100;
-        }
-
-        .custom-tooltip:hover::before,
-        .custom-tooltip:hover::after {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .custom-tooltip:hover::before {
-            transform: translateY(0);
-        }
-
-        .custom-tooltip:hover::after {
-            transform: translateY(0);
-        }
-
-        /* 反馈链接悬停动画 */
-        .feedback-link:hover svg {
-            transform: scale(1.15) rotate(-8deg);
-        }
-
-        .feedback-link:active svg {
-            transform: scale(0.95);
-        }
-
-        /* 群列表项动画 */
+        /* ========== 群头像动效修复 ========== */
         .group-item {
             display: flex;
             align-items: center;
@@ -500,10 +335,116 @@
             border: 1px solid #f3f4f6;
             transition: all 0.3s var(--ease-spring);
             background: #fff;
-            opacity: 0;
-            animation: groupItemIn 0.4s var(--ease-out-back) both;
+            position: relative;
+            z-index: 1;
         }
 
+        .dark .group-item {
+            background: #2a2b2e;
+            border-color: #3f4045;
+        }
+
+        .group-item:hover {
+            border-color: #FB7299;
+            box-shadow: 0 6px 20px rgba(251, 114, 153, 0.2);
+            transform: translateY(-3px) scale(1.01);
+            z-index: 10;
+        }
+
+        .group-item:active {
+            transform: translateY(-1px) scale(0.99);
+        }
+
+        .group-avatar {
+            transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+            position: relative;
+            z-index: 2;
+        }
+
+        .group-item:hover .group-avatar {
+            transform: scale(1.1) rotate(3deg);
+            box-shadow: 0 4px 12px rgba(251, 114, 153, 0.3);
+        }
+
+        /* ========== 用户头像悬停动效 ========== */
+        .user-avatar {
+            transition: transform 0.4s var(--ease-spring), box-shadow 0.3s;
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 8px 24px rgba(251, 114, 153, 0.4);
+        }
+
+        /* ========== 统计数字动画 ========== */
+        .stat-number.updating {
+            animation: numberPop 0.4s var(--ease-spring);
+        }
+
+        @keyframes numberPop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+                color: #FB7299;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* ========== 等级进度条闪光动画 ========== */
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .animate-shimmer {
+            animation: shimmer 2s infinite;
+        }
+
+        /* ========== 卡片动画序列 ========== */
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .animate-slide-in-left {
+            animation: slideInFromLeft 0.5s var(--ease-spring) both;
+        }
+
+        .animate-slide-in-right {
+            animation: slideInFromRight 0.5s var(--ease-spring) both;
+        }
+
+        /* ========== 群列表项入场动画 ========== */
         @keyframes groupItemIn {
             from {
                 opacity: 0;
@@ -516,1682 +457,854 @@
             }
         }
 
-        .dark .group-item {
-            background: #2a2b2e;
-            border-color: #3f4045;
-        }
-
-        .group-item:hover {
-            border-color: #FB7299;
-            box-shadow: 0 6px 20px rgba(251, 114, 153, 0.2);
-            transform: translateY(-3px) scale(1.01);
-        }
-
-        .group-item:active {
-            transform: translateY(-1px) scale(0.99);
-        }
-
-        /* 群头像动画 */
-        .group-item .group-avatar {
-            transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
-        }
-
-        .group-item:hover .group-avatar {
-            transform: scale(1.1) rotate(3deg);
-            box-shadow: 0 4px 12px rgba(251, 114, 153, 0.3);
-        }
-
-        /* 按钮点击效果 */
-        button {
-            transition: transform 0.2s var(--ease-spring), box-shadow 0.2s, background-color 0.3s;
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        /* 主要按钮悬停 */
-        .btn-primary {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.6s;
-        }
-
-        .btn-primary:hover::after {
-            transform: translateX(100%);
-        }
-
-        /* 刷新按钮旋转 */
-        .refresh-btn svg {
-            transition: transform 0.5s var(--ease-spring);
-        }
-
-        .refresh-btn:hover svg {
-            transform: rotate(180deg);
-        }
-
-        .refresh-btn.spinning svg {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* 输入框聚焦动画 */
-        input[type="text"],
-        input[type="number"],
-        select {
-            transition: all 0.3s var(--ease-smooth);
-        }
-
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        select:focus {
-            transform: scale(1.01);
-        }
-
-        /* 搜索框特殊效果 */
-        .search-input-wrapper {
-            position: relative;
-        }
-
-        .search-input-wrapper::before {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            border-radius: 14px;
-            background: linear-gradient(45deg, #FB7299, #00A1D6, #FB7299);
-            background-size: 200% 200%;
-            opacity: 0;
-            z-index: -1;
-            transition: opacity 0.3s;
-        }
-
-        .search-input-wrapper:focus-within::before {
-            opacity: 1;
-            animation: gradientShift 3s ease infinite;
-        }
-
-        @keyframes gradientShift {
-
-            0%,
-            100% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-        }
-
-        /* 用户头像悬停 */
-        #user-avatar {
-            transition: transform 0.4s var(--ease-spring), box-shadow 0.3s;
-        }
-
-        #user-avatar:hover {
-            transform: scale(1.1) rotate(-5deg);
-            box-shadow: 0 8px 24px rgba(251, 114, 153, 0.4);
-        }
-
-        /* 等级进度条动画 */
-        #user-level-progress {
-            position: relative;
-            overflow: hidden;
-        }
-
-        #user-level-progress::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            to {
-                left: 100%;
-            }
-        }
-
-        /* 状态徽章动画 */
-        #status-badge {
-            animation: badgePulse 2s ease-in-out infinite;
-        }
-
-        @keyframes badgePulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
-            }
-
-            50% {
-                box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
-            }
-        }
-
-        /* 加载动画增强 */
-        .loading-spinner {
-            animation: spinBounce 1s var(--ease-smooth) infinite;
-        }
-
-        @keyframes spinBounce {
-            0% {
-                transform: rotate(0deg) scale(1);
-            }
-
-            50% {
-                transform: rotate(180deg) scale(1.1);
-            }
-
-            100% {
-                transform: rotate(360deg) scale(1);
-            }
-        }
-
-        /* 二维码出现动画 */
-        #qrcode-wrapper {
-            animation: qrcodeIn 0.5s var(--ease-spring) both;
-        }
-
-        @keyframes qrcodeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8) rotateY(15deg);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1) rotateY(0deg);
-            }
-        }
-
-        /* 二维码图片悬停 */
-        #qrcode-img {
-            transition: transform 0.4s var(--ease-spring), box-shadow 0.3s;
-        }
-
-        #qrcode-img:hover {
-            transform: scale(1.05);
-            box-shadow: 0 12px 32px rgba(251, 114, 153, 0.3);
-        }
-
-        /* 二维码加载动画 */
-        .qrcode-loader {
-            width: 120px;
-            height: 120px;
-            position: relative;
-            background: linear-gradient(135deg, #f0f0f0 25%, transparent 25%) -20px 0,
-                linear-gradient(225deg, #f0f0f0 25%, transparent 25%) -20px 0,
-                linear-gradient(315deg, #f0f0f0 25%, transparent 25%),
-                linear-gradient(45deg, #f0f0f0 25%, transparent 25%);
-            background-size: 20px 20px;
-            background-color: #fafafa;
-            border-radius: 12px;
-            animation: qrcodeLoaderPulse 1.5s ease-in-out infinite;
-            overflow: hidden;
-        }
-
-        .dark .qrcode-loader {
-            background: linear-gradient(135deg, #3f4045 25%, transparent 25%) -20px 0,
-                linear-gradient(225deg, #3f4045 25%, transparent 25%) -20px 0,
-                linear-gradient(315deg, #3f4045 25%, transparent 25%),
-                linear-gradient(45deg, #3f4045 25%, transparent 25%);
-            background-size: 20px 20px;
-            background-color: #2a2b2e;
-        }
-
-        .qrcode-loader::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(251, 114, 153, 0.15), transparent);
-            animation: qrcodeLoaderShimmer 1.5s ease-in-out infinite;
-        }
-
-        .qrcode-loader::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 40px;
-            height: 40px;
-            margin: -20px 0 0 -20px;
-            border: 3px solid transparent;
-            border-top-color: #FB7299;
-            border-radius: 50%;
-            animation: qrcodeLoaderSpin 0.8s linear infinite;
-        }
-
-        @keyframes qrcodeLoaderPulse {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.85;
-                transform: scale(0.98);
-            }
-        }
-
-        @keyframes qrcodeLoaderShimmer {
-            0% {
-                transform: translateX(-100%);
-            }
-
-            100% {
-                transform: translateX(100%);
-            }
-        }
-
-        @keyframes qrcodeLoaderSpin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* VIP 标签闪烁 */
-        #user-vip {
-            animation: vipGlow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes vipGlow {
-            from {
-                box-shadow: 0 0 4px rgba(251, 114, 153, 0.5);
-            }
-
-            to {
-                box-shadow: 0 0 12px rgba(251, 114, 153, 0.8);
-            }
-        }
-
-        /* 空状态动画 */
-        #groups-empty {
-            animation: emptyBounce 0.6s var(--ease-spring);
-        }
-
-        @keyframes emptyBounce {
-            0% {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-
-            60% {
-                transform: scale(1.03);
-            }
-
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* ========== SVG 图标动效 ========== */
-
-        /* 通用图标样式 */
-        .icon-section {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.3s var(--ease-spring);
-        }
-
-        /* 锁图标动效 */
-        .icon-lock {
-            transition: transform 0.4s var(--ease-spring);
-        }
-
-        .glass-card:hover .icon-lock {
-            animation: lockWiggle 0.6s var(--ease-spring);
-        }
-
-        @keyframes lockWiggle {
-
-            0%,
-            100% {
-                transform: rotate(0deg);
-            }
-
-            25% {
-                transform: rotate(-10deg);
-            }
-
-            75% {
-                transform: rotate(10deg);
-            }
-        }
-
-        /* 齿轮图标旋转 */
-        .icon-gear {
-            transition: transform 0.6s var(--ease-smooth);
-        }
-
-        .glass-card:hover .icon-gear {
-            transform: rotate(90deg);
-        }
-
-        /* 群组图标动效 */
-        .icon-groups {
-            transition: transform 0.3s var(--ease-spring);
-        }
-
-        .glass-card:hover .icon-groups {
-            animation: groupsBounce 0.5s var(--ease-spring);
-        }
-
-        @keyframes groupsBounce {
-
-            0%,
-            100% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.15);
-            }
-        }
-
-        /* 搜索图标动效 */
-        .icon-search {
-            transition: all 0.3s var(--ease-spring);
-        }
-
-        .search-input-wrapper:focus-within .icon-search {
-            transform: scale(1.15) rotate(15deg);
-            color: #FB7299;
-        }
-
-        /* 空状态叶子飘动 */
-        .icon-empty {
-            animation: leafFloat 3s ease-in-out infinite;
-        }
-
-        @keyframes leafFloat {
-
-            0%,
-            100% {
-                transform: translateY(0) rotate(0deg);
-            }
-
-            25% {
-                transform: translateY(-8px) rotate(5deg);
-            }
-
-            50% {
-                transform: translateY(-4px) rotate(-3deg);
-            }
-
-            75% {
-                transform: translateY(-10px) rotate(3deg);
-            }
-        }
-
-        /* 选项图标悬浮 */
-        .select-option svg {
-            transition: transform 0.2s var(--ease-spring);
-        }
-
-        .select-option:hover svg {
-            transform: scale(1.2);
-        }
-
-        /* 页面淡入 */
-        .app-layout {
-            animation: pageIn 0.8s var(--ease-smooth) both;
-        }
-
-        @keyframes pageIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        /* 悬浮卡片阴影变化 */
-        .sidebar .glass-card:hover {
-            transform: translateY(-4px);
-        }
-
-        /* 登录区域切换动画 */
-        #login-section,
-        #logged-in-section {
-            transition: opacity 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
-        }
-
-        #login-section.hidden,
-        #logged-in-section.hidden {
-            opacity: 0;
-            transform: scale(0.95);
-            pointer-events: none;
-        }
-
-        #login-section:not(.hidden),
-        #logged-in-section:not(.hidden) {
-            animation: sectionIn 0.5s var(--ease-spring) both;
-        }
-
-        @keyframes sectionIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9) translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        /* 按钮波纹效果 */
-        .ripple-btn {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .ripple-btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s, opacity 0.6s;
-            opacity: 0;
-        }
-
-        .ripple-btn:active::before {
-            width: 300px;
-            height: 300px;
-            opacity: 1;
-            transition: 0s;
-        }
-
-        /* 快速操作按钮动画 */
-        .quick-action-btn {
-            transition: all 0.3s var(--ease-spring);
-        }
-
-        .quick-action-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        /* 状态徽章切换动画 */
-        #status-badge {
-            transition: all 0.4s var(--ease-spring);
-        }
-
-        #status-badge.status-running {
-            animation: badgePulse 2s ease-in-out infinite;
-        }
-
-        #status-badge.status-paused {
-            animation: none;
-        }
-
-        /* 滚动容器平滑滚动 */
-        .scroll-area,
-        .sidebar {
-            scroll-behavior: smooth;
-        }
-
-        /* 输入框占位符动画 */
-        input::placeholder {
-            transition: opacity 0.3s, transform 0.3s;
-        }
-
-        input:focus::placeholder {
-            opacity: 0.5;
-            transform: translateX(5px);
-        }
-
-        /* 卡片标题栏动画 */
-        .glass-card>div:first-child {
-            transition: background-color 0.3s;
-        }
-
-        .glass-card:hover>div:first-child {
-            background-color: rgba(251, 114, 153, 0.05);
-        }
-
-        .dark .glass-card:hover>div:first-child {
-            background-color: rgba(251, 114, 153, 0.1);
-        }
-
-        /* 数据统计区域 hover 高亮 */
-        .top-stat-item span:last-child {
-            transition: text-shadow 0.3s;
-        }
-
-        .top-stat-item:hover span:last-child {
-            text-shadow: 0 0 20px rgba(251, 114, 153, 0.5);
-        }
-
-        /* 一键全开/关按钮 */
-        .bulk-action-btn {
-            transition: all 0.25s var(--ease-spring);
-        }
-
-        .bulk-action-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .bulk-action-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* ========== 自定义表单组件优化 ========== */
-
-        /* 数字输入框容器 */
-        .number-input-wrapper {
-            display: flex;
-            align-items: center;
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            overflow: hidden;
-            transition: all 0.3s var(--ease-smooth);
-        }
-
-        .dark .number-input-wrapper {
-            background-color: #374151;
-            border-color: #4b5563;
-        }
-
-        .number-input-wrapper:focus-within {
-            border-color: #FB7299;
-            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.1);
-            background-color: white;
-        }
-
-        .dark .number-input-wrapper:focus-within {
-            background-color: #4b5563;
-            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.2);
-        }
-
-        /* 数字加减按钮 */
-        .number-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            color: #6b7280;
-            transition: all 0.2s;
-            user-select: none;
-        }
-
-        .dark .number-btn {
-            color: #9ca3af;
-        }
-
-        .number-btn:hover {
-            background-color: rgba(251, 114, 153, 0.1);
-            color: #FB7299;
-        }
-
-        .number-btn:active {
-            transform: scale(0.9);
-        }
-
-        /* 数字输入框本体 */
-        .number-input-field {
-            flex: 1;
-            text-align: center;
-            border: none;
-            background: transparent;
-            outline: none;
-            font-size: 0.875rem;
-            color: #1f2937;
-            -moz-appearance: textfield;
-            font-weight: 500;
-        }
-
-        .dark .number-input-field {
-            color: #f3f4f6;
-        }
-
-        .number-input-field::-webkit-inner-spin-button,
-        .number-input-field::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        /* 自定义下拉选择框 */
-        .custom-select {
-            position: relative;
-            width: 100%;
-            user-select: none;
-        }
-
-        /* 触发器 */
-        .select-trigger {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-            color: #1f2937;
-            cursor: pointer;
-            transition: all 0.3s var(--ease-smooth);
-        }
-
-        .dark .select-trigger {
-            background-color: #374151;
-            border-color: #4b5563;
-            color: #f3f4f6;
-        }
-
-        .select-trigger:hover {
-            border-color: #FB7299;
-            background-color: white;
-        }
-
-        .dark .select-trigger:hover {
-            background-color: #4b5563;
-        }
-
-        .custom-select.active .select-trigger {
-            border-color: #FB7299;
-            background-color: white;
-            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.1);
-        }
-
-        .dark .custom-select.active .select-trigger {
-            background-color: #4b5563;
-            box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.2);
-        }
-
-        /* 选项列表 */
-        .select-options {
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 0;
-            width: 100%;
-            background-color: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            z-index: 50;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px) scale(0.98);
-            transform-origin: top center;
-            transition: all 0.3s var(--ease-spring);
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .dark .select-options {
-            background-color: #2a2b2e;
-            border-color: #3f4045;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
-        }
-
-        .custom-select.active .select-options {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
-
-        /* 选项目标志 */
-        .select-option {
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            color: #374151;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 1px solid #f3f4f6;
-        }
-
-        .select-option:last-child {
-            border-bottom: none;
-        }
-
-        .dark .select-option {
-            color: #d1d5db;
-            border-color: #37383c;
-        }
-
-        .select-option:hover {
-            background-color: #fff0f6;
-            /* pink-50 */
-            color: #FB7299;
-        }
-
-        .dark .select-option:hover {
-            background-color: #3f4045;
-        }
-
-        .select-option.selected {
-            color: #FB7299;
-            font-weight: 600;
-            background-color: rgba(251, 114, 153, 0.08);
-        }
-
-        /* 箭头动画 */
-        .arrow-icon {
-            transition: transform 0.4s var(--ease-spring);
-        }
-
-        .custom-select.active .arrow-icon {
-            transform: rotate(180deg);
+        .animate-group-item {
+            animation: groupItemIn 0.4s var(--ease-spring) both;
         }
     </style>
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body>
+<body class="bg-gray-50 text-slate-800 dark:bg-slate-900 dark:text-slate-200 h-screen flex overflow-hidden"
+    x-data="app()">
+
+    <!-- Toast 容器 -->
     <div id="toast-container" class="toast-container"></div>
 
-    <div class="app-layout">
-        <!-- 顶部通栏 -->
-        <header
-            class="bg-white dark:bg-bili-dark border-b border-gray-200 dark:border-gray-700 px-8 py-4 flex items-center justify-between shadow-sm z-10 transition-colors">
-            <div class="flex items-center gap-4">
-                <svg class="w-8 h-8" viewBox="0 0 1071 1024" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M887.365188 952.783894H184.455499C82.758914 952.783894 0 876.72402 0 783.272408V336.111466c0-93.477378 82.758914-169.537251 184.455499-169.537252h704.043373c51.969094 0 101.67082 20.225949 136.377002 55.498973A159.256801 159.256801 0 0 1 1071.846453 336.420652V783.272408c0 93.451613-82.758914 169.511486-184.481265 169.511486zM184.455499 251.600495c-54.829069 0-99.429218 37.901109-99.429218 84.510971V783.272408c0 46.609861 44.600149 84.51097 99.429218 84.51097H887.365188c54.829069 0 99.429218-37.901109 99.429218-84.51097V335.415796a74.539706 74.539706 0 0 0-22.570613-53.72115c-18.808844-19.11803-46.377972-30.09415-75.750687-30.094151z"
-                        fill="#FB7299" />
-                    <path
-                        d="M397.794168 495.316736L219.651226 535.923226a36.355177 36.355177 0 0 1-15.175903-71.112889l178.142942-40.55496a35.8141 35.8141 0 0 1 43.131513 27.955611c4.302845 19.169562-8.786049 38.854434-27.95561 43.157279zM674.052285 495.316736c-19.169562-4.302845-32.258456-23.987717-27.955611-43.157279a35.8141 35.8141 0 0 1 43.131514-27.955611l178.142941 40.55496a36.355177 36.355177 0 0 1-15.175902 71.112889l-178.142942-40.554959zM268.811876 1023.999845a56.684187 56.684187 0 0 1-56.684187-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015zM803.034577 1023.999845a56.684187 56.684187 0 0 1-56.813015-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015z"
-                        fill="#FB7299" />
-                    <path
-                        d="M248.918821 42.946487m26.538343-29.671097l0 0q26.538343-29.671097 56.20944-3.132755l185.900469 166.272595q29.671097 26.538343 3.132754 56.20944l0 0q-26.538343 29.671097-56.20944 3.132755l-185.900468-166.272595q-29.671097-26.538343-3.132755-56.20944Z"
-                        fill="#FB7299" />
-                    <path
-                        d="M577.629382 262.330313m-26.538343-29.671098l0 0q-26.538343-29.671097 3.132755-56.20944l185.900468-166.272595q29.671097-26.538343 56.209441 3.132755l0 0q26.538343 29.671097-3.132755 56.20944l-185.900468 166.272595q-29.671097 26.538343-56.209441-3.132755Z"
-                        fill="#FB7299" />
-                    <path
-                        d="M595.621982 756.373184a39.447041 39.447041 0 0 1-30.738289-14.686357L533.346672 702.677799l-32.438814 38.467951a39.730462 39.730462 0 0 1-55.473207 5.153108l-44.316729-36.535535a23.188986 23.188986 0 1 1 29.501543-35.762569l39.163621 32.258455 33.495202-39.601634a39.6274 39.6274 0 0 1 61.038563 0.566842l32.722236 40.323069 45.424646-33.933215A23.188986 23.188986 0 1 1 669.904033 710.665117l-50.655051 37.798047a39.369745 39.369745 0 0 1-23.627 7.91002z"
-                        fill="#FB7299" />
+    <!-- Sidebar -->
+    <aside
+        class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col transition-all duration-300 z-20 flex-shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100 dark:border-slate-700">
+            <div class="w-8 h-8 rounded-lg bg-bili-pink flex items-center justify-center text-white mr-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">B站视频解析 · 控制中心</h1>
-                <span id="status-badge"
-                    class="ml-2 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">运行中</span>
-                <button id="refresh-btn"
-                    class="refresh-btn ml-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors group"
-                    title="刷新数据" onclick="refreshAll()">
-                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-bili-pink transition-colors"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                        <path d="M21 3v5h-5" />
-                    </svg>
-                </button>
             </div>
+            <span class="font-bold text-lg tracking-tight">NapCat Bilibili</span>
+        </div>
 
-            <div class="flex items-center h-10">
-                <div class="top-stat-item flex flex-col items-center">
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">今日解析</span>
-                    <span id="stats-today" class="stat-number text-lg font-bold text-bili-pink">0</span>
-                </div>
-                <div class="top-stat-item flex flex-col items-center">
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">累计解析</span>
-                    <span id="stats-total" class="stat-number text-lg font-bold text-bili-pink">0</span>
-                </div>
-                <div class="top-stat-item flex flex-col items-center">
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">活跃群聊</span>
-                    <span id="enabled-groups" class="stat-number text-lg font-bold text-bili-pink">0</span>
-                </div>
-                <div class="top-stat-item flex flex-col items-center border-none">
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mb-1">运行时长</span>
-                    <span id="uptime" class="text-lg font-bold text-gray-700 dark:text-gray-300 min-w-[5em] text-center"
-                        style="font-variant-numeric: tabular-nums;">--</span>
-                </div>
-                <div class="top-stat-item flex flex-col items-center border-none pl-4">
-                    <a href="https://github.com/AQiaoYo/napcat-plugin-bilibili/issues" target="_blank"
-                        rel="noopener noreferrer"
-                        class="feedback-link custom-tooltip flex flex-col items-center text-gray-400 dark:text-gray-500 hover:text-bili-pink transition-all duration-300"
-                        data-tooltip="有新想法或发现 Bug？欢迎反馈！">
-                        <svg class="w-5 h-5 mb-1 transition-transform duration-300" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <path
-                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                        </svg>
-                        <span class="text-xs">反馈</span>
-                    </a>
-                </div>
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <template x-for="item in menu" :key="item.id">
+                <a href="#" @click.prevent="currentTab = item.id"
+                    :class="currentTab === item.id ? 'bg-bili-pink/10 text-bili-pink' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'"
+                    class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 font-medium group sidebar-link">
+                    <span x-html="item.icon" class="w-5 h-5 mr-3 transition-colors duration-200"
+                        :class="currentTab === item.id ? 'text-bili-pink' : 'text-slate-400 group-hover:text-slate-500'"></span>
+                    <span x-text="item.label"></span>
+                </a>
+            </template>
+        </nav>
+
+        <div class="p-4 border-t border-gray-100 dark:border-slate-700">
+            <div
+                class="flex items-center px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700/50 transition-colors duration-300">
+                <div class="w-2 h-2 rounded-full mr-2 transition-colors duration-300"
+                    :class="status.online ? 'bg-green-500 status-pulse' : 'bg-red-500'"></div>
+                <span class="text-xs font-medium text-slate-500 dark:text-slate-400 transition-colors duration-300"
+                    x-text="status.text"></span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 bg-gray-50 dark:bg-slate-900">
+        <!-- Header -->
+        <header
+            class="h-16 glass sticky top-0 z-10 border-b border-gray-200 dark:border-slate-700 px-8 flex items-center justify-between">
+            <h2 class="text-xl font-bold" x-text="menu.find(m => m.id === currentTab)?.label"></h2>
+            <div class="flex items-center space-x-4">
+                <a href="https://github.com/AQiaoYo/napcat-plugin-bilibili" target="_blank"
+                    class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path fill-rule="evenodd"
+                            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                </a>
             </div>
         </header>
 
-        <main class="main-content">
-            <!-- 左侧边栏 (25%) -->
-            <aside class="sidebar">
-                <!-- 账号状态 -->
-                <div class="glass-card shadow-sm">
+        <!-- Content Body -->
+        <div class="flex-1 overflow-auto p-8 relative">
+
+            <!-- Tab: Dashboard -->
+            <div x-show="currentTab === 'dashboard'" x-transition.opacity class="max-w-5xl mx-auto">
+                <!-- 上方：统计和状态（合并为一行） -->
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+                    <!-- 插件状态 -->
                     <div
-                        class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 font-bold text-base text-gray-700 dark:text-gray-200 bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
-                        <span class="icon-section">
-                            <svg class="icon-lock w-5 h-5 text-bili-pink" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                <circle cx="12" cy="16" r="1"></circle>
-                            </svg>
-                        </span> 登录信息
-                    </div>
-
-                    <div id="login-loading" class="p-8 text-center text-sm text-gray-400 dark:text-gray-500">正在检查登录状态...
-                    </div>
-
-                    <!-- 未登录 -->
-                    <div id="login-section" class="hidden p-6 text-center">
-                        <div id="qrcode-placeholder" class="mb-4">
-                            <button
-                                class="btn-primary w-full py-3 bg-bili-pink text-white rounded-xl text-sm font-bold hover:bg-pink-600 transition shadow-md shadow-pink-100 dark:shadow-pink-900/20"
-                                onclick="generateQrCode()">
-                                立即扫码登录
-                            </button>
-                        </div>
-                        <!-- 二维码加载中 -->
-                        <div id="qrcode-loading" class="hidden py-8">
-                            <div class="qrcode-loader mx-auto mb-4"></div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400 font-medium">正在生成二维码...</div>
-                        </div>
-                        <div id="qrcode-wrapper" class="hidden">
-                            <img id="qrcode-img"
-                                class="w-40 h-40 mx-auto border-4 border-white dark:border-gray-700 shadow-sm rounded-xl mb-3"
-                                src="">
-                            <div id="qrcode-status" class="text-xs text-gray-500 dark:text-gray-400 mb-3">请使用 Bilibili
-                                App 扫码</div>
-                            <button class="text-sm text-bili-pink font-medium hover:underline"
-                                onclick="generateQrCode()">刷新二维码</button>
+                        class="bg-white dark:bg-slate-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full status-pulse"
+                            :class="status.online ? 'bg-green-500' : 'bg-red-500'"></div>
+                        <div class="min-w-0">
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wider">状态</div>
+                            <div class="text-sm font-bold truncate"
+                                :class="status.online ? 'text-green-600' : 'text-red-500'"
+                                x-text="status.online ? '运行中' : '离线'"></div>
                         </div>
                     </div>
-
-                    <!-- 已登录 -->
-                    <div id="logged-in-section" class="hidden account-mini">
-                        <div class="flex items-center gap-4" style="margin-bottom: 1rem;">
-                            <img id="user-avatar"
-                                class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-600 ring-2 ring-bili-pink shadow-sm"
-                                src="">
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span id="user-name"
-                                        class="font-bold text-base text-gray-800 dark:text-gray-100 truncate">--</span>
-                                    <span id="user-vip"
-                                        class="text-[10px] bg-bili-pink text-white px-1.5 py-0.5 rounded font-bold hidden">VIP</span>
-                                </div>
-                                <div id="user-uid" class="text-xs text-gray-400 dark:text-gray-500 mt-1">UID: --</div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div>
-                                <div
-                                    class="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-2 font-medium">
-                                    <span class="text-bili-pink font-bold italic">LV<span
-                                            id="user-level">0</span></span>
-                                    <span><span id="user-exp-current">0</span> / <span
-                                            id="user-exp-next">0</span></span>
-                                </div>
-                                <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
-                                    <div id="user-level-progress"
-                                        class="h-full bg-bili-pink transition-all duration-700" style="width: 0%"></div>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-3 gap-2 border-t border-b border-gray-50 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30 rounded-lg"
-                                style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
-                                <div class="text-center">
-                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">硬币</div>
-                                    <div id="user-money" class="text-sm font-bold text-gray-700 dark:text-gray-200">--
-                                    </div>
-                                </div>
-                                <div class="text-center border-l border-r border-gray-100 dark:border-gray-700">
-                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">粉丝</div>
-                                    <div id="user-follower" class="text-sm font-bold text-gray-700 dark:text-gray-200">
-                                        --</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 font-medium">节操</div>
-                                    <div id="user-moral" class="text-sm font-bold text-gray-700 dark:text-gray-200">--
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button
-                                class="w-full py-2.5 text-xs text-red-500 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition border border-red-100 dark:border-red-900/50 mt-2"
-                                onclick="logout()">退出登录</button>
+                    <!-- 运行时间 -->
+                    <div
+                        class="bg-white dark:bg-slate-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">运行时间</div>
+                        <div class="text-sm font-bold font-mono truncate" x-text="status.uptimeFormatted || '-'"></div>
+                    </div>
+                    <!-- 解析成功 -->
+                    <div
+                        class="bg-white dark:bg-slate-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">成功</div>
+                        <div class="text-sm font-bold text-green-500" x-text="status.stats?.successes || 0"></div>
+                    </div>
+                    <!-- 解析失败 -->
+                    <div
+                        class="bg-white dark:bg-slate-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">失败</div>
+                        <div class="text-sm font-bold text-red-500" x-text="status.stats?.failures || 0"></div>
+                    </div>
+                    <!-- 群组 -->
+                    <div
+                        class="bg-white dark:bg-slate-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 col-span-2 lg:col-span-1">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">群组</div>
+                        <div class="text-sm font-bold text-bili-pink">
+                            <span x-text="groups.filter(g => g.biliEnabled).length"></span>/<span x-text="groups.length"
+                                class="text-slate-400"></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 插件设置 -->
-                <div class="glass-card shadow-sm">
+                <!-- 下方：B站账号卡片 -->
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                     <div
-                        class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 font-bold text-base text-gray-700 dark:text-gray-200 bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
-                        <span class="icon-section">
-                            <svg class="icon-gear w-5 h-5 text-bili-pink" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path
-                                    d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42">
-                                </path>
-                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14" opacity="0.3">
-                                </path>
-                            </svg>
-                        </span> 功能配置
+                        class="px-5 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 flex justify-between items-center">
+                        <h3 class="font-bold text-sm">B站账号</h3>
+                        <span class="text-xs px-2 py-0.5 rounded"
+                            :class="loginStatus.isLogin ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-200 text-slate-500 dark:bg-slate-600 dark:text-slate-400'"
+                            x-text="!loginStatus.loaded ? '检测中' : (loginStatus.isLogin ? '已登录' : '未登录')"></span>
                     </div>
-                    <div class="p-5 space-y-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <div class="text-sm font-bold text-gray-800 dark:text-gray-100">全局解析开关</div>
-                                <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">控制所有群的自动化处理</div>
+                    <div class="p-5">
+                        <!-- 加载中状态 -->
+                        <div x-show="!loginStatus.loaded" class="flex items-center justify-center py-4 gap-3">
+                            <div
+                                class="animate-spin rounded-full h-5 w-5 border-2 border-bili-pink border-t-transparent">
                             </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="global-toggle" onchange="toggleGlobal(this.checked)">
+                            <span class="text-sm text-slate-500">检测登录状态...</span>
+                        </div>
+
+                        <!-- 已登录状态 -->
+                        <div x-show="loginStatus.isLogin && loginStatus.loaded" x-transition
+                            class="flex items-start gap-4">
+                            <!-- 头像 -->
+                            <img :src="loginStatus.face"
+                                class="w-12 h-12 rounded-full border-2 border-white dark:border-slate-600 ring-2 ring-bili-pink shadow-sm object-cover flex-shrink-0"
+                                onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23FB7299%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22>B</text></svg>'">
+                            <!-- 信息 -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="font-bold text-sm truncate" x-text="loginStatus.uname"></span>
+                                    <span x-show="loginStatus.vip?.status === 1"
+                                        class="text-[9px] bg-bili-pink text-white px-1 py-0.5 rounded font-bold">VIP</span>
+                                </div>
+                                <div class="text-xs text-slate-400 mb-2">UID: <span x-text="loginStatus.mid"></span>
+                                </div>
+                                <!-- 等级和数据 -->
+                                <div class="flex items-center gap-4 text-xs">
+                                    <span class="text-bili-pink font-bold">LV<span
+                                            x-text="loginStatus.level_info?.current_level || 0"></span></span>
+                                    <span class="text-slate-400">硬币: <span class="text-slate-600 dark:text-slate-300"
+                                            x-text="loginStatus.money ?? '-'"></span></span>
+                                    <span class="text-slate-400">粉丝: <span class="text-slate-600 dark:text-slate-300"
+                                            x-text="(loginStatus.relation_stat?.follower >= 10000 ? (loginStatus.relation_stat.follower / 10000).toFixed(1) + '万' : (loginStatus.relation_stat?.follower ?? '-'))"></span></span>
+                                </div>
+                            </div>
+                            <!-- 退出按钮 -->
+                            <button @click="logout()"
+                                class="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1 rounded transition-colors flex-shrink-0">
+                                退出
+                            </button>
+                        </div>
+
+                        <!-- 未登录状态 - 显示登录二维码 -->
+                        <div x-show="!loginStatus.isLogin && loginStatus.loaded" x-transition
+                            class="flex flex-col md:flex-row items-center gap-6">
+                            <!-- 二维码区域 -->
+                            <div class="relative flex-shrink-0 w-36 h-36">
+                                <!-- 初始状态：点击获取二维码 -->
+                                <div x-show="!qrCode.url && !qrCode.generating && !qrCode.isExpired"
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0 scale-95"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-150"
+                                    x-transition:leave-start="opacity-100 scale-100"
+                                    x-transition:leave-end="opacity-0 scale-95"
+                                    class="absolute inset-0 bg-gray-100 dark:bg-slate-700 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors border-2 border-dashed border-gray-300 dark:border-slate-500"
+                                    @click="generateQrCode()">
+                                    <svg class="w-10 h-10 text-bili-pink mb-2" viewBox="0 0 48 48" fill="none"
+                                        stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                        stroke-linejoin="bevel">
+                                        <rect x="32" y="6" width="10" height="10" />
+                                        <rect x="32" y="32" width="10" height="10" />
+                                        <rect x="6" y="32" width="10" height="10" />
+                                        <rect x="6" y="6" width="10" height="10" />
+                                        <path d="M8 24L30 24" />
+                                        <path d="M38 24L40 24" />
+                                        <path d="M24 37V39" />
+                                        <path d="M24 17V31" />
+                                        <path d="M24 8V10" />
+                                    </svg>
+                                    <span class="text-xs text-slate-500 dark:text-slate-400">点击获取二维码</span>
+                                </div>
+
+                                <!-- 加载动画 -->
+                                <div x-show="qrCode.generating" x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0 scale-95"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-150"
+                                    x-transition:leave-start="opacity-100 scale-100"
+                                    x-transition:leave-end="opacity-0 scale-95"
+                                    class="absolute inset-0 bg-gray-100 dark:bg-slate-700 rounded-lg flex flex-col items-center justify-center">
+                                    <div class="relative w-8 h-8">
+                                        <div class="absolute inset-0 rounded-full border-3 border-bili-pink/20"></div>
+                                        <div
+                                            class="absolute inset-0 rounded-full border-3 border-bili-pink border-t-transparent animate-spin">
+                                        </div>
+                                    </div>
+                                    <span class="text-xs text-slate-400 mt-2">生成中...</span>
+                                </div>
+
+                                <!-- 二维码图片 - 不使用圆角，保证二维码完整 -->
+                                <img x-show="qrCode.url && !qrCode.generating && !qrCode.isExpired" :src="qrCode.imgUrl"
+                                    x-transition:enter="transition ease-out duration-300"
+                                    x-transition:enter-start="opacity-0 scale-90"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    class="absolute inset-0 w-full h-full border-4 border-white dark:border-slate-600 shadow-md rounded-lg object-contain bg-white">
+
+                                <!-- 过期遮罩 -->
+                                <div x-show="qrCode.isExpired" x-transition.opacity
+                                    class="absolute inset-0 bg-white/95 dark:bg-slate-800/95 flex flex-col items-center justify-center rounded-lg">
+                                    <svg class="w-6 h-6 text-slate-400 mb-1" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <div class="text-slate-500 text-xs mb-2">已过期</div>
+                                    <button @click.prevent="generateQrCode()" :disabled="qrCode.generating"
+                                        class="text-xs bg-bili-pink text-white px-3 py-1 rounded hover:bg-bili-pink/90 transition-all disabled:opacity-50">
+                                        刷新
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- 说明文字 -->
+                            <div class="flex-1 text-center md:text-left">
+                                <p class="text-slate-600 dark:text-slate-300 text-sm mb-1">使用 B 站 App 扫描二维码</p>
+                                <p class="text-xs text-slate-400 mb-2">登录后可获取高清视频</p>
+                                <p x-show="qrCode.url || qrCode.generating || qrCode.isExpired"
+                                    class="text-sm font-medium transition-colors duration-300" :class="{
+                                            'text-green-500': qrCode.status === 'SCANNED' || qrCode.status === 'SUCCESS',
+                                            'text-amber-500': qrCode.status === 'WAITING',
+                                            'text-red-500': qrCode.isExpired,
+                                            'text-slate-400': !qrCode.status && !qrCode.isExpired
+                                        }" x-text="qrCode.statusText || '等待扫码...'"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Settings -->
+            <div x-show="currentTab === 'settings'" x-transition.opacity class="max-w-3xl mx-auto">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 card-hover animate-fade-in-up">
+                    <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700">
+                        <h3 class="font-bold text-lg">全局配置</h3>
+                        <p class="text-sm text-slate-400 mt-1">设置插件的基础行为和渲染选项</p>
+                    </div>
+                    <div class="p-8 space-y-8">
+
+                        <!-- 基础设置 -->
+                        <div class="space-y-6">
+                            <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider">基础功能</h4>
+
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium">启用功能</div>
+                                    <div class="text-sm text-slate-500">总开关，控制是否解析任何群消息</div>
+                                </div>
+                                <button type="button" @click="config.enabled = !config.enabled"
+                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-bili-pink focus:ring-offset-2"
+                                    :class="config.enabled ? 'bg-bili-pink' : 'bg-gray-200 dark:bg-gray-600'">
+                                    <span class="sr-only">启用功能</span>
+                                    <span
+                                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="config.enabled ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium">发送模式</div>
+                                    <div class="text-sm text-slate-500">选择解析后的消息展示形式</div>
+                                </div>
+                                <select x-model="config.sendMode"
+                                    class="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-bili-pink">
+                                    <option value="info-only">仅发送信息卡片</option>
+                                    <option value="with-video">发送信息卡片 + 视频</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium">调试模式</div>
+                                    <div class="text-sm text-slate-500">输出详细日志用于故障排查</div>
+                                </div>
+                                <button type="button" @click="config.debug = !config.debug"
+                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-bili-pink focus:ring-offset-2"
+                                    :class="config.debug ? 'bg-bili-pink' : 'bg-gray-200 dark:bg-gray-600'">
+                                    <span class="sr-only">调试模式</span>
+                                    <span
+                                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="config.debug ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 进阶参数 -->
+                        <div class="space-y-6 pt-6 border-t border-gray-100 dark:border-slate-700">
+                            <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider">进阶参数</h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">最大视频大小 (MB)</label>
+                                    <input type="number" x-model.number="config.maxVideoSizeMB"
+                                        class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-bili-pink transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">去重时间 (秒)</label>
+                                    <input type="number" x-model.number="config.parseCacheTTL"
+                                        class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-bili-pink transition-colors">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Puppeteer -->
+                        <div class="space-y-6 pt-6 border-t border-gray-100 dark:border-slate-700">
+                            <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                                Puppeteer 渲染
+                                <span
+                                    class="ml-2 px-2 py-0.5 text-[10px] bg-sky-100 text-sky-600 dark:bg-sky-900 dark:text-sky-300 rounded font-bold">高级</span>
+                            </h4>
+
+                            <!-- Puppeteer 插件未安装提示 -->
+                            <template x-if="!puppeteerStatus.available && !puppeteerStatus.checking">
+                                <div
+                                    class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                                    <div class="flex items-start gap-3">
+                                        <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                            </path>
+                                        </svg>
+                                        <div>
+                                            <div class="font-medium text-amber-800 dark:text-amber-200">Puppeteer
+                                                渲染插件未检测到</div>
+                                            <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                                                要使用图片渲染功能，需要先安装并启用 <code
+                                                    class="bg-amber-100 dark:bg-amber-800 px-1 rounded">napcat-plugin-puppeteer</code>
+                                                插件。</p>
+                                            <a href="https://github.com/AQiaoYo/napcat-plugin-puppeteer" target="_blank"
+                                                class="inline-flex items-center gap-1 mt-3 text-sm font-medium text-amber-600 dark:text-amber-400 hover:underline">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path
+                                                        d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z">
+                                                    </path>
+                                                </svg>
+                                                前往安装
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 正在检测中 -->
+                            <template x-if="puppeteerStatus.checking">
+                                <div class="flex items-center gap-3 text-slate-500 py-4">
+                                    <div
+                                        class="animate-spin rounded-full h-5 w-5 border-2 border-bili-pink border-t-transparent">
+                                    </div>
+                                    <span class="text-sm">正在检测 Puppeteer 插件状态...</span>
+                                </div>
+                            </template>
+
+                            <!-- Puppeteer 插件已安装，显示配置选项 -->
+                            <template x-if="puppeteerStatus.available && !puppeteerStatus.checking">
+                                <div class="space-y-6">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="font-medium flex items-center gap-2">
+                                                启用图片渲染
+                                                <span
+                                                    class="text-xs px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded">已检测到插件</span>
+                                            </div>
+                                            <div class="text-sm text-slate-500">使用 Puppeteer 渲染精美的 HTML 卡片</div>
+                                        </div>
+                                        <button type="button"
+                                            @click="config.puppeteer.enabled = !config.puppeteer.enabled"
+                                            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-bili-pink focus:ring-offset-2"
+                                            :class="config.puppeteer.enabled ? 'bg-bili-pink' : 'bg-gray-200 dark:bg-gray-600'">
+                                            <span class="sr-only">启用图片渲染</span>
+                                            <span
+                                                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                                :class="config.puppeteer.enabled ? 'translate-x-5' : 'translate-x-0'"></span>
+                                        </button>
+                                    </div>
+
+                                    <div x-show="config.puppeteer.enabled" x-transition
+                                        class="bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl">
+                                        <label class="block text-sm font-medium mb-2">NapCat WebUI 地址</label>
+                                        <input type="text" x-model="config.puppeteer.webUIUrl"
+                                            class="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-bili-pink transition-colors"
+                                            placeholder="http://127.0.0.1:6099">
+                                        <p class="text-xs text-slate-400 mt-2">用于 Puppeteer 访问模板页面的基础地址，通常是当前的 webui
+                                            端口。
+                                        </p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="pt-6 border-t border-gray-100 dark:border-slate-700 flex justify-end">
+                            <button @click="saveConfig"
+                                class="bg-slate-800 text-white dark:bg-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                :disabled="saving">
+                                <span x-show="!saving">保存更改</span>
+                                <span x-show="saving">保存中...</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Groups -->
+            <div x-show="currentTab === 'groups'" x-transition.opacity class="max-w-5xl mx-auto space-y-6">
+                <!-- Bulk Actions -->
+                <div
+                    class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex justify-between items-center card-hover animate-fade-in">
+                    <div>
+                        <h3 class="font-bold">群组管理</h3>
+                        <p class="text-xs text-slate-400">已加载 <span x-text="groups.length"></span> 个群组</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="batchUpdate(true)"
+                            class="text-sm px-4 py-2 bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 rounded-lg hover:bg-green-100 transition-all duration-200 btn-interactive">全部开启</button>
+                        <button @click="batchUpdate(false)"
+                            class="text-sm px-4 py-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-lg hover:bg-red-100 transition-all duration-200 btn-interactive">全部关闭</button>
+                    </div>
+                </div>
+
+                <!-- Group List -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="(group, index) in groups" :key="group.group_id">
+                        <div class="group-item animate-group-item" :style="`animation-delay: ${index * 30}ms`">
+                            <div class="flex items-center space-x-3 overflow-hidden flex-1">
+                                <img :src="`http://p.qlogo.cn/gh/${group.group_id}/${group.group_id}/100/`"
+                                    :alt="group.group_name"
+                                    class="w-10 h-10 rounded-lg flex-shrink-0 object-cover group-avatar"
+                                    @error="$el.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><rect fill=%22%236366f1%22 width=%2240%22 height=%2240%22 rx=%228%22/><text x=%2250%%22 y=%2255%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2216%22 font-weight=%22bold%22>' + group.group_name.slice(0,1) + '</text></svg>'">
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold truncate" x-text="group.group_name"></div>
+                                    <div class="text-xs text-slate-400" x-text="group.group_id"></div>
+                                </div>
+                            </div>
+                            <!-- 使用旧版 toggle-switch 开关样式 -->
+                            <label class="toggle-switch ml-3">
+                                <input type="checkbox" :checked="group.biliEnabled" @change="toggleGroup(group)">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-
-                        <div class="relative z-20">
-                            <div class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">默认发送模式</div>
-
-                            <!-- 自定义下拉框 -->
-                            <div class="custom-select" id="send-mode-select">
-                                <div class="select-trigger" onclick="toggleSelect('send-mode-select')">
-                                    <span class="selected-value">仅发送视频概览卡片</span>
-                                    <svg class="w-4 h-4 text-gray-400 arrow-icon" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </div>
-                                <div class="select-options">
-                                    <div class="select-option" data-value="info-only"
-                                        onclick="selectOption('send-mode-select', 'info-only', '仅发送视频概览卡片')">
-                                        <svg class="w-5 h-5 text-bili-pink flex-shrink-0" viewBox="0 0 24 24"
-                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                            <path d="M7 7h10M7 12h10M7 17h6"></path>
-                                        </svg>
-                                        <span>仅发送视频概览卡片</span>
-                                    </div>
-                                    <div class="select-option" data-value="with-video"
-                                        onclick="selectOption('send-mode-select', 'with-video', '发送概览卡片 + 视频源文件')">
-                                        <svg class="w-5 h-5 text-bili-pink flex-shrink-0" viewBox="0 0 24 24"
-                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
-                                            <polygon points="10,8 16,12 10,16" fill="currentColor" opacity="0.8">
-                                            </polygon>
-                                        </svg>
-                                        <span>发送概览卡片 + 视频源文件</span>
-                                    </div>
-                                </div>
-                                <select id="send-mode" class="hidden" onchange="updateConfig()">
-                                    <option value="info-only">仅发送视频概览卡片</option>
-                                    <option value="with-video">发送概览卡片 + 视频源文件</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">单视频大小阈值 (MB)</div>
-                            <div class="number-input-wrapper">
-                                <div class="number-btn" onclick="adjustNumber('max-video-size', -10)">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M20 12H4"></path>
-                                    </svg>
-                                </div>
-                                <input type="number" id="max-video-size" class="number-input-field" value="100" min="1"
-                                    max="1000" onchange="updateConfig()" onkeydown="checkNumberInput(event)">
-                                <div class="number-btn" onclick="adjustNumber('max-video-size', 10)">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-2">超过此大小的视频将只发送信息卡片</p>
-                        </div>
-                    </div>
+                    </template>
                 </div>
+            </div>
 
-            </aside>
-
-            <!-- 右侧主区域 (75%) -->
-            <section class="glass-card overflow-hidden shadow-sm">
-                <div
-                    class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-white dark:bg-bili-dark sticky top-0 z-10 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <span class="icon-section">
-                            <svg class="icon-groups w-6 h-6 text-bili-pink" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
-                                <circle cx="17" cy="7" r="3" opacity="0.6"></circle>
-                                <path d="M21 21v-2a3 3 0 0 0-3-3h-1" opacity="0.6"></path>
-                            </svg>
-                        </span>
-                        <div class="flex flex-col">
-                            <span
-                                class="font-bold text-base sm:text-lg text-gray-800 dark:text-gray-100 tracking-tight">群聊解析权限管理</span>
-                            <span id="total-groups" class="text-xs text-gray-400 dark:text-gray-500 font-normal">共计扫描到 0
-                                个群聊</span>
-                        </div>
-                    </div>
-                    <div
-                        class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                        <div class="search-input-wrapper relative flex-1 sm:flex-none">
-                            <span
-                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 transition-all duration-300"
-                                id="search-icon">
-                                <svg class="icon-search w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <path d="M21 21l-4.35-4.35"></path>
-                                </svg>
-                            </span>
-                            <input type="text" id="group-search"
-                                class="w-full sm:w-48 lg:w-64 pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-100 outline-none focus:bg-white dark:focus:bg-gray-600 focus:border-bili-pink focus:ring-2 focus:ring-pink-50 dark:focus:ring-pink-900/30 transition-all placeholder-gray-400 dark:placeholder-gray-500"
-                                placeholder="输入群名或群号搜索..." oninput="filterGroups()">
-                        </div>
-                        <div class="hidden sm:block h-6 w-[1px] bg-gray-200 dark:bg-gray-600 mx-1"></div>
-                        <div class="flex gap-2 justify-end">
-                            <button
-                                class="bulk-action-btn px-3 py-1.5 text-xs text-bili-pink font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition"
-                                onclick="toggleAllGroups(true)">一键全开</button>
-                            <button
-                                class="bulk-action-btn px-3 py-1.5 text-xs text-gray-400 dark:text-gray-500 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-                                onclick="toggleAllGroups(false)">一键全关</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scroll-area bg-gray-50/30 dark:bg-gray-800/30" id="groups-scroll">
-                    <!-- 加载中 -->
-                    <div id="groups-loading" class="py-32 text-center">
-                        <div
-                            class="loading-spinner inline-block w-8 h-8 border-4 border-bili-pink border-t-transparent rounded-full">
-                        </div>
-                        <div class="mt-4 text-sm text-gray-400 dark:text-gray-500 font-medium">正在拉取群组列表...</div>
-                    </div>
-
-                    <!-- 列表容器 -->
-                    <div id="groups-container"
-                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 hidden">
-                        <!-- 动态生成 -->
-                    </div>
-
-                    <!-- 空状态 -->
-                    <div id="groups-empty" class="py-32 text-center hidden">
-                        <div class="mb-4 flex justify-center">
-                            <svg class="icon-empty w-16 h-16 text-gray-300 dark:text-gray-600" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.82-.13 2.67-.36" opacity="0.3">
-                                </path>
-                                <path d="M12 22c5.5 0 10-4.5 10-10 0-1.5-.33-2.92-.92-4.2"></path>
-                                <path d="M8 14s1.5 2 4 2c.8 0 1.5-.2 2.1-.5" opacity="0.5"></path>
-                                <path d="M17 2.5c-2 2-2.5 5-1 7.5 1.5 2.5 4 3 6 2" stroke-dasharray="2 2"></path>
-                                <path d="M22 7c-2 .5-3.5 2-3.5 4"></path>
-                                <circle cx="9" cy="9" r="1" fill="currentColor"></circle>
-                                <circle cx="15" cy="9" r="1" fill="currentColor"></circle>
-                            </svg>
-                        </div>
-                        <div class="text-base font-bold text-gray-400 dark:text-gray-500">未找到匹配的群聊</div>
-                        <p class="text-sm text-gray-300 dark:text-gray-600 mt-1">请尝试更换搜索关键词</p>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
+        </div>
+    </main>
 
     <script>
-        const ROUTE_PREFIX = '/bilibili';
-        // 从 localStorage 获取 token（NapCat WebUI 鉴权方式）
-        const token = localStorage.getItem('token') || '';
-        let groupsData = [];
-        let globalEnabled = true;
-        let qrcodeKey = null;
-        let pollTimer = null;
-        let countdownTimer = null;
-        let remainingTime = 180;
-
-        // 运行时长相关变量
-        let serverUptimeMs = 0;
-        let uptimeTimerId = null;
-        let lastFetchTime = 0;
-
-        function authHeaders(h = {}) { if (token) h['Authorization'] = 'Bearer ' + token; return h; }
-
-        // 格式化运行时长
-        function formatUptime(ms) {
-            const seconds = Math.floor(ms / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-
-            if (days > 0) {
-                const h = hours % 24;
-                const m = minutes % 60;
-                return `${days}天${h}时${m}分`;
-            } else if (hours > 0) {
-                const m = minutes % 60;
-                const s = seconds % 60;
-                return `${hours}时${m}分${s}秒`;
-            } else if (minutes > 0) {
-                const s = seconds % 60;
-                return `${minutes}分${s}秒`;
-            } else {
-                return `${seconds}秒`;
-            }
-        }
-
-        // 更新运行时长显示
-        function updateUptimeDisplay() {
-            const uptimeEl = document.getElementById('uptime');
-            if (serverUptimeMs > 0) {
-                const elapsed = Date.now() - lastFetchTime;
-                const currentUptime = serverUptimeMs + elapsed;
-                uptimeEl.textContent = formatUptime(currentUptime);
-            }
-        }
-
-        // 启动运行时长定时器
-        function startUptimeTimer() {
-            if (uptimeTimerId) clearInterval(uptimeTimerId);
-            uptimeTimerId = setInterval(updateUptimeDisplay, 1000);
-        }
-
-        async function resolveApiBase() {
-            const tries = [];
-            if (window.__PLUGIN_NAME__) tries.push(window.__PLUGIN_NAME__);
-            try {
-                if (window.parent && window.parent.__PLUGIN_NAME__) tries.push(window.parent.__PLUGIN_NAME__);
-            } catch (e) { }
-
-            const extMatch = location.pathname.match(/\/ext\/([^\/]+)/);
-            if (extMatch) tries.unshift(extMatch[1]);
-
-            // 默认兜底
-            tries.push('napcat-plugin-bilibili');
-
-            for (const name of [...new Set(tries.filter(Boolean))]) {
-                const base = '/api/Plugin/ext/' + name;
-                try {
-                    const r = await fetch(base + ROUTE_PREFIX + '/status', { headers: authHeaders() });
-                    if (r.ok) return base;
-                } catch (e) { }
-            }
-            return '/api/Plugin/ext/' + (window.__PLUGIN_NAME__ || 'napcat-plugin-bilibili');
-        }
-
-        let API_BASE_P = resolveApiBase();
-
-        async function authFetch(path, options = {}) {
-            const base = await API_BASE_P;
-            const res = await fetch(base + ROUTE_PREFIX + path, {
-                ...options,
-                headers: { 'Content-Type': 'application/json', ...options.headers, ...authHeaders() }
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || `HTTP ${res.status}`);
-            }
-            return res.json();
-        }
-
+        // === Toast 消息弹窗 ===
         function showToast(msg, type = 'info') {
-            const c = document.getElementById('toast-container');
-            const t = document.createElement('div');
-            let bgClass = 'bg-bili-pink';
-            if (type === 'success') bgClass = 'bg-green-500';
-            if (type === 'error') bgClass = 'bg-red-500';
-            t.className = `toast ${bgClass}`;
-            t.textContent = msg;
-            c.appendChild(t);
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = msg;
+            container.appendChild(toast);
             setTimeout(() => {
-                t.classList.add('hiding');
-                setTimeout(() => t.remove(), 400);
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 400);
             }, 3000);
         }
 
-        // 统计数字更新动画
-        function animateStatNumber(elementId, newValue) {
-            const el = document.getElementById(elementId);
-            const oldValue = el.textContent;
-            if (oldValue !== String(newValue)) {
-                el.textContent = newValue;
-                el.classList.add('updating');
-                setTimeout(() => el.classList.remove('updating'), 400);
-            }
+        // === Core Logic Copied from Example ===
+        function resolvePluginName() {
+            if (window.__PLUGIN_NAME__) return window.__PLUGIN_NAME__;
+            try {
+                if (window.parent && window.parent.__PLUGIN_NAME__) return window.parent.__PLUGIN_NAME__;
+            } catch (e) { }
+            // Try to guess from URL
+            const pluginMatch = location.pathname.match(/\/plugin\/([^\/]+)/);
+            if (pluginMatch) return pluginMatch[1];
+            const extMatch = location.pathname.match(/\/ext\/([^\/]+)/);
+            if (extMatch) return extMatch[1];
+            return 'napcat-plugin-bilibili';
         }
 
-        async function loadStatus() {
-            try {
-                const res = await authFetch('/status');
-                if (res.code === 0) {
-                    const { config, uptime, uptimeFormatted, stats } = res.data;
-                    globalEnabled = config.enabled !== false;
+        const PLUGIN_NAME = resolvePluginName();
 
-                    const badge = document.getElementById('status-badge');
-                    badge.className = `ml-2 px-3 py-1 rounded-full text-xs font-bold border ${globalEnabled
-                        ? 'bg-green-100 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800 status-running'
-                        : 'bg-red-100 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 status-paused'}`;
-                    badge.textContent = globalEnabled ? '运行中' : '已暂停';
+        // 修正 API 路径：NapCat 插件 API 挂载在 /api/Plugin/ext/<plugin_name>
+        // 后端路由 wrapPath 已移除 /bilibili 前缀
+        // 所以完整基础路径是 /api/Plugin/ext/<plugin_name>
+        const API_BASE = `/api/Plugin/ext/${PLUGIN_NAME}`;
 
-                    // 使用毫秒数实时更新运行时长
-                    if (typeof uptime === 'number' && uptime > 0) {
-                        serverUptimeMs = uptime;
-                        lastFetchTime = Date.now();
-                        updateUptimeDisplay();
-                        startUptimeTimer();
+        function getToken() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('webui_token') || localStorage.getItem('token') || '';
+        }
+
+        function authHeaders(h = {}) {
+            const token = getToken();
+            if (token) h['Authorization'] = 'Bearer ' + token;
+            return h;
+        }
+
+        function app() {
+            return {
+                currentTab: 'dashboard',
+                menu: [
+                    { id: 'dashboard', label: '运行状态', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>' },
+                    { id: 'settings', label: '插件配置', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>' },
+                    { id: 'groups', label: '群组管理', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>' },
+                ],
+
+                // Data
+                status: { text: '连接中...', online: false, uptime: 0, uptimeFormatted: '-', startTime: null, stats: {} },
+                config: { puppeteer: {} },
+                groups: [],
+                loginStatus: { isLogin: false, loaded: false },
+                qrCode: { url: '', imgUrl: '', loading: false, key: '', status: '', statusText: '', isExpired: false, generating: false, timer: null },
+                puppeteerStatus: { available: false, checking: true },
+                saving: false,
+                uptimeTimer: null,
+
+                init() {
+                    // 初始化暗夜模式并监听系统主题变化
+                    this.updateTheme();
+                    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => this.updateTheme());
+
+                    this.fetchStatus();
+                    this.fetchConfig();
+                    this.fetchGroups();
+                    this.fetchLoginStatus();
+                    this.checkPuppeteerPlugin();
+
+                    // Periodic Refresh
+                    setInterval(() => this.fetchStatus(), 30000); // 降低频率，因为本地已有计时器
+                    setInterval(() => this.fetchLoginStatus(), 10000);
+
+                    // 本地运行时间计时器，每秒更新
+                    this.uptimeTimer = setInterval(() => this.updateLocalUptime(), 1000);
+                },
+
+                // 暗夜模式 - 跟随系统设置
+                updateTheme() {
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        document.documentElement.classList.add('dark');
                     } else {
-                        document.getElementById('uptime').textContent = uptimeFormatted || '--';
+                        document.documentElement.classList.remove('dark');
+                    }
+                },
+
+                // 格式化运行时间
+                formatUptime(seconds) {
+                    if (!seconds || seconds < 0) return '-';
+                    const days = Math.floor(seconds / 86400);
+                    const hours = Math.floor((seconds % 86400) / 3600);
+                    const minutes = Math.floor((seconds % 3600) / 60);
+                    const secs = Math.floor(seconds % 60);
+
+                    const parts = [];
+                    if (days > 0) parts.push(`${days}天`);
+                    if (hours > 0) parts.push(`${hours}小时`);
+                    if (minutes > 0) parts.push(`${minutes}分`);
+                    parts.push(`${secs}秒`);
+
+                    return parts.join(' ');
+                },
+
+                // 本地更新运行时间
+                updateLocalUptime() {
+                    if (this.status.startTime && this.status.online) {
+                        const elapsed = Math.floor((Date.now() - this.status.startTime) / 1000);
+                        this.status.uptimeFormatted = this.formatUptime(elapsed);
+                    }
+                },
+
+                // API Helpers
+                async api(path, method = 'GET', body = null) {
+                    const url = API_BASE + path;
+                    const opts = {
+                        method,
+                        headers: authHeaders({
+                            'Content-Type': 'application/json'
+                        })
+                    };
+                    if (method === 'GET') delete opts.headers['Content-Type'];
+
+                    if (body) {
+                        opts.body = JSON.stringify(body);
                     }
 
-                    document.getElementById('global-toggle').checked = globalEnabled;
+                    const res = await fetch(url, opts);
+                    const json = await res.json();
 
-                    // 更新自定义下拉框状态
-                    const sendMode = config.sendMode || 'info-only';
-                    const modeSelect = document.getElementById('send-mode');
-                    if (modeSelect) {
-                        modeSelect.value = sendMode;
-                        // 同步 UI 状态
-                        const wrapper = document.getElementById('send-mode-select');
-                        if (wrapper) {
-                            const option = wrapper.querySelector(`.select-option[data-value="${sendMode}"]`);
-                            if (option) {
-                                wrapper.querySelector('.selected-value').textContent = option.querySelector('span:last-child').textContent;
-                                wrapper.querySelectorAll('.select-option').forEach(o => o.classList.remove('selected'));
-                                option.classList.add('selected');
-                            }
+                    // Error handling
+                    if (res.status >= 400) {
+                        throw new Error(json.message || 'Request failed');
+                    }
+
+                    return json.data !== undefined ? json.data : json;
+                },                // Actions
+                async fetchStatus() {
+                    try {
+                        const data = await this.api('/status');
+                        // uptime 是毫秒，转换为秒
+                        const uptimeMs = data.uptime || 0;
+                        const uptimeSeconds = Math.floor(uptimeMs / 1000);
+                        const startTime = Date.now() - uptimeMs;
+                        this.status = {
+                            online: true,
+                            text: '运行中',
+                            startTime: startTime,
+                            uptimeFormatted: this.formatUptime(uptimeSeconds),
+                            stats: data.stats || {}
+                        };
+                    } catch (e) {
+                        this.status.online = false;
+                        this.status.text = '连接断开';
+                        this.status.startTime = null;
+                        this.status.uptimeFormatted = '-';
+                    }
+                },
+
+                async fetchConfig() {
+                    try {
+                        this.config = await this.api('/config');
+                        if (!this.config.puppeteer) this.config.puppeteer = { enabled: false, webUIUrl: '' };
+                    } catch (e) {
+                        console.error('Failed to load config', e);
+                    }
+                },
+
+                // 检测 Puppeteer 插件是否可用
+                async checkPuppeteerPlugin() {
+                    this.puppeteerStatus.checking = true;
+                    try {
+                        // 尝试请求 puppeteer 插件的状态接口
+                        const puppeteerApiBase = '/plugin/napcat-plugin-puppeteer/api';
+                        const res = await fetch(puppeteerApiBase + '/status', {
+                            method: 'GET',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            this.puppeteerStatus.available = data.code === 0;
+                        } else {
+                            this.puppeteerStatus.available = false;
                         }
+                    } catch (e) {
+                        // 插件不存在或无法访问
+                        this.puppeteerStatus.available = false;
+                    }
+                    this.puppeteerStatus.checking = false;
+                },
+
+                async saveConfig() {
+                    this.saving = true;
+                    try {
+                        await this.api('/config', 'POST', this.config);
+                        showToast('配置保存成功', 'success');
+                    } catch (e) {
+                        showToast('保存失败: ' + e.message, 'error');
+                    }
+                    this.saving = false;
+                },
+
+                async fetchGroups() {
+                    try {
+                        this.groups = await this.api('/groups');
+                    } catch (e) {
+                        console.error('Failed to load groups');
+                    }
+                },
+
+                async toggleGroup(group) {
+                    group.biliEnabled = !group.biliEnabled;
+                    try {
+                        await this.api(`/groups/${group.group_id}/config`, 'POST', { enabled: group.biliEnabled });
+                        showToast(`群组 ${group.group_name} 已${group.biliEnabled ? '启用' : '禁用'}`, 'success');
+                    } catch (e) {
+                        group.biliEnabled = !group.biliEnabled; // Revert
+                        showToast('更新群配置失败: ' + e.message, 'error');
+                    }
+                },
+
+                // 批量操作状态：{ pending: boolean, enabled: boolean, timer: null }
+                batchState: { pending: false, enabled: false, timer: null },
+
+                async batchUpdate(enabled) {
+                    // 如果不是待确认状态，显示提示
+                    if (!this.batchState.pending || this.batchState.enabled !== enabled) {
+                        // 清理之前的计时器
+                        if (this.batchState.timer) {
+                            clearTimeout(this.batchState.timer);
+                        }
+                        this.batchState = { pending: true, enabled, timer: null };
+                        showToast(`再次点击确认${enabled ? '开启' : '关闭'}所有群组`, 'info');
+                        // 3秒后重置状态
+                        this.batchState.timer = setTimeout(() => {
+                            this.batchState = { pending: false, enabled: false, timer: null };
+                        }, 3000);
+                        return;
                     }
 
-                    document.getElementById('max-video-size').value = config.maxVideoSizeMB || 100;
-
-                    if (stats) {
-                        animateStatNumber('stats-today', stats.todayParsed || 0);
-                        animateStatNumber('stats-total', stats.totalParsed || 0);
+                    // 执行批量操作
+                    if (this.batchState.timer) {
+                        clearTimeout(this.batchState.timer);
                     }
-                }
-            } catch (e) { }
-        }
+                    this.batchState = { pending: false, enabled: false, timer: null };
 
-        async function loadGroups() {
-            try {
-                const res = await authFetch('/groups');
-                if (res.code === 0) {
-                    groupsData = res.data || [];
-                    document.getElementById('total-groups').textContent = `共计扫描到 ${groupsData.length} 个群聊`;
-                    animateStatNumber('enabled-groups', groupsData.filter(g => g.biliEnabled !== false).length);
-                    renderGroups();
-                }
-            } catch (e) {
-                document.getElementById('groups-loading').innerHTML = '<div class="text-sm text-red-400 font-bold">拉取列表失败，请检查网络</div>';
-            }
-        }
-
-        function renderGroups(filter = '') {
-            const container = document.getElementById('groups-container');
-            const loading = document.getElementById('groups-loading');
-            const empty = document.getElementById('groups-empty');
-            loading.classList.add('hidden');
-
-            const filtered = filter ? groupsData.filter(g => (g.group_name || '').toLowerCase().includes(filter.toLowerCase()) || String(g.group_id).includes(filter)) : groupsData;
-
-            if (filtered.length === 0) {
-                empty.classList.remove('hidden'); container.classList.add('hidden'); return;
-            }
-
-            empty.classList.add('hidden'); container.classList.remove('hidden');
-            container.innerHTML = filtered.map((g, index) => {
-                const avatarUrl = `http://p.qlogo.cn/gh/${g.group_id}/${g.group_id}/100/`;
-                // 交错动画延迟，最多延迟 0.5s
-                const delay = Math.min(index * 0.03, 0.5);
-                return `
-                <div class="group-item shadow-sm" style="animation-delay: ${delay}s;">
-                    <div class="group-avatar w-10 h-10 rounded-lg bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center text-sm font-bold text-bili-pink mr-4 flex-shrink-0 border border-pink-100 dark:border-pink-800/30 overflow-hidden">
-                        <img src="${avatarUrl}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='${(g.group_name || 'G')[0]}';">
-                    </div>
-                    <div class="min-w-0 flex-1 mr-3">
-                        <div class="text-sm font-bold text-gray-700 dark:text-gray-200 truncate mb-0.5">${g.group_name || '未知群名'}</div>
-                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-mono tracking-wider">${g.group_id}</div>
-                    </div>
-                    <label class="toggle-switch flex-shrink-0">
-                        <input type="checkbox" ${g.biliEnabled !== false ? 'checked' : ''} ${!globalEnabled ? 'disabled' : ''} onchange="toggleGroup('${g.group_id}', this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            `}).join('');
-        }
-
-        function filterGroups() { renderGroups(document.getElementById('group-search').value.trim()); }
-
-        async function toggleGlobal(enabled) {
-            try {
-                const res = await authFetch('/config', { method: 'POST', body: JSON.stringify({ enabled }) });
-                if (res.code === 0) {
-                    globalEnabled = enabled;
-                    loadStatus(); renderGroups();
-                    showToast(enabled ? '解析功能已开启' : '解析功能已暂停', 'success');
-                }
-            } catch (e) { document.getElementById('global-toggle').checked = !enabled; }
-        }
-
-        async function updateConfig() {
-            const sendMode = document.getElementById('send-mode').value;
-            const maxVideoSizeMB = parseInt(document.getElementById('max-video-size').value) || 100;
-            try {
-                const res = await authFetch('/config', { method: 'POST', body: JSON.stringify({ sendMode, maxVideoSizeMB }) });
-                if (res.code === 0) showToast('设置保存成功', 'success');
-            } catch (e) { }
-        }
-
-        async function toggleGroup(groupId, enabled) {
-            try {
-                const res = await authFetch(`/groups/${groupId}/config`, { method: 'POST', body: JSON.stringify({ enabled }) });
-                if (res.code === 0) {
-                    const g = groupsData.find(x => String(x.group_id) === String(groupId));
-                    if (g) g.biliEnabled = enabled;
-                    animateStatNumber('enabled-groups', groupsData.filter(x => x.biliEnabled !== false).length);
-                }
-            } catch (e) {
-                console.error('Toggle group failed:', e);
-                showToast('更新失败', 'error');
-                loadGroups();
-            }
-        }
-
-        async function toggleAllGroups(enabled) {
-            // 检查是否有群数据
-            if (!groupsData || groupsData.length === 0) {
-                showToast('群列表为空，请先刷新数据', 'error');
-                return;
-            }
-
-            try {
-                const groupIds = groupsData.map(g => g.group_id);
-                showToast(`正在批量${enabled ? '启用' : '禁用'} ${groupIds.length} 个群...`, 'info');
-
-                const res = await authFetch('/groups/bulk-config', {
-                    method: 'POST',
-                    body: JSON.stringify({ enabled, groupIds })
-                });
-
-                if (res.code === 0) {
-                    groupsData.forEach(g => g.biliEnabled = enabled);
-                    animateStatNumber('enabled-groups', groupsData.filter(x => x.biliEnabled !== false).length);
-                    renderGroups(document.getElementById('group-search').value.trim());
-                    showToast(`已${enabled ? '启用' : '禁用'}所有群聊`, 'success');
-                } else {
-                    showToast('操作失败: ' + (res.message || '未知错误'), 'error');
-                }
-            } catch (e) {
-                console.error('Bulk update failed:', e);
-                showToast('批量操作异常: ' + (e.message || '网络错误'), 'error');
-            }
-        }
-
-        async function refreshAll() {
-            const refreshBtn = document.getElementById('refresh-btn');
-            refreshBtn.classList.add('spinning');
-            showToast('正在刷新...', 'info');
-            await Promise.all([
-                loadStatus(),
-                loadGroups(),
-                checkLoginStatus()
-            ]);
-            refreshBtn.classList.remove('spinning');
-            showToast('刷新完成', 'success');
-        }
-
-        async function checkLoginStatus() {
-            try {
-                const res = await authFetch('/login/status');
-                document.getElementById('login-loading').classList.add('hidden');
-                if (res.code === 0 && res.data?.isLoggedIn) showLoggedInUI(res.data.userInfo);
-                else showLoginUI();
-            } catch (e) { document.getElementById('login-loading').classList.add('hidden'); showLoginUI(); }
-        }
-
-        function showLoginUI() {
-            document.getElementById('login-section').classList.remove('hidden');
-            document.getElementById('logged-in-section').classList.add('hidden');
-        }
-
-        function showLoggedInUI(u) {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('logged-in-section').classList.remove('hidden');
-            document.getElementById('user-avatar').src = u.face || '';
-            document.getElementById('user-name').textContent = u.uname || '未知用户';
-            document.getElementById('user-uid').textContent = 'UID: ' + (u.mid || '--');
-            document.getElementById('user-level').textContent = u.level_info?.current_level || 0;
-            document.getElementById('user-exp-current').textContent = u.level_info?.current_exp || 0;
-            const next = u.level_info?.next_exp;
-            document.getElementById('user-exp-next').textContent = typeof next === 'number' ? next : 'MAX';
-            document.getElementById('user-level-progress').style.width = (typeof next === 'number' ? (u.level_info.current_exp / next * 100) : 100) + '%';
-            document.getElementById('user-money').textContent = u.money ?? '--';
-            document.getElementById('user-follower').textContent = u.relation_stat?.follower >= 10000 ? (u.relation_stat.follower / 10000).toFixed(1) + '万' : (u.relation_stat?.follower ?? '--');
-            document.getElementById('user-moral').textContent = u.moral ?? '--';
-            if (u.vip?.status === 1) document.getElementById('user-vip').classList.remove('hidden');
-        }
-
-        async function generateQrCode() {
-            stopPolling();
-            document.getElementById('qrcode-placeholder').classList.add('hidden');
-            document.getElementById('qrcode-wrapper').classList.add('hidden');
-            document.getElementById('qrcode-loading').classList.remove('hidden');
-            try {
-                const res = await authFetch('/login/qrcode/generate', { method: 'POST' });
-                if (res.code === 0) {
-                    qrcodeKey = res.data.qrcode_key;
-                    const qrcodeImg = document.getElementById('qrcode-img');
-                    qrcodeImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(res.data.url);
-                    // 等待图片加载完成后再显示
-                    qrcodeImg.onload = () => {
-                        document.getElementById('qrcode-loading').classList.add('hidden');
-                        document.getElementById('qrcode-wrapper').classList.remove('hidden');
-                    };
-                    qrcodeImg.onerror = () => {
-                        document.getElementById('qrcode-loading').classList.add('hidden');
-                        document.getElementById('qrcode-wrapper').classList.remove('hidden');
-                    };
-                    document.getElementById('qrcode-status').textContent = '请扫码登录';
-                    remainingTime = 180; startCountdown(); startPolling();
-                } else {
-                    // 生成失败，恢复按钮
-                    document.getElementById('qrcode-loading').classList.add('hidden');
-                    document.getElementById('qrcode-placeholder').classList.remove('hidden');
-                    showToast('二维码生成失败', 'error');
-                }
-            } catch (e) {
-                document.getElementById('qrcode-loading').classList.add('hidden');
-                document.getElementById('qrcode-placeholder').classList.remove('hidden');
-                showToast('二维码生成失败', 'error');
-            }
-        }
-
-        function startCountdown() {
-            if (countdownTimer) clearInterval(countdownTimer);
-            countdownTimer = setInterval(() => { if (--remainingTime <= 0) stopPolling(); }, 1000);
-        }
-
-        function startPolling() {
-            if (pollTimer) clearInterval(pollTimer);
-            pollTimer = setInterval(async () => {
-                try {
-                    const res = await authFetch('/login/qrcode/poll?qrcode_key=' + encodeURIComponent(qrcodeKey));
-                    if (res.code === 0 && res.data?.isSuccess) {
-                        stopPolling(); showToast('登录成功', 'success'); checkLoginStatus();
+                    const groupIds = this.groups.map(g => g.group_id);
+                    try {
+                        await this.api('/groups/bulk-config', 'POST', { enabled, groupIds });
+                        this.groups.forEach(g => g.biliEnabled = enabled);
+                        showToast(`已${enabled ? '开启' : '关闭'}所有群组`, 'success');
+                    } catch (e) {
+                        showToast('批量更新失败: ' + e.message, 'error');
                     }
-                } catch (e) { }
-            }, 2000);
-        }
+                },
 
-        function stopPolling() { clearInterval(pollTimer); clearInterval(countdownTimer); }
-        function stopUptimeTimer() { if (uptimeTimerId) { clearInterval(uptimeTimerId); uptimeTimerId = null; } }
+                async fetchLoginStatus() {
+                    try {
+                        const data = await this.api('/login/status');
+                        // 后端返回 { isLoggedIn, userInfo, credential }
+                        // 转换为前端期望的格式
+                        this.loginStatus = {
+                            isLogin: data.isLoggedIn,
+                            loaded: true,
+                            ...(data.userInfo || {}),
+                        };
 
-        // 退出登录状态：0-初始，1-待确认，2-执行中
-        let logoutState = 0;
-        async function logout() {
-            if (logoutState === 0) {
-                logoutState = 1;
-                showToast('再次点击确认退出登录', 'info');
-                setTimeout(() => { logoutState = 0; }, 3000); // 3秒后重置
-                return;
-            }
-            if (logoutState === 2) return; // 防止重复点击
-            logoutState = 2;
+                        // 如果已登录，清除二维码轮询
+                        if (this.loginStatus.isLogin && this.qrCode.timer) {
+                            clearInterval(this.qrCode.timer);
+                            this.qrCode.timer = null;
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch login status:', e);
+                        this.loginStatus.loaded = true; // 即使失败也标记为已加载
+                    }
+                },
 
-            try {
-                const res = await authFetch('/login/logout', { method: 'POST' });
-                if (res.code === 0) { showLoginUI(); showToast('账号已退出', 'success'); }
-            } catch (e) {
-                showToast('退出失败', 'error');
-            } finally {
-                logoutState = 0;
-            }
-        }
+                // 退出登录状态：0-初始，1-待确认，2-执行中
+                logoutState: 0,
 
-        // 暗色模式 - 跟随系统设置
-        function updateTheme() {
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        }
+                async logout() {
+                    // 第一次点击：显示 Toast 提示
+                    if (this.logoutState === 0) {
+                        this.logoutState = 1;
+                        showToast('再次点击确认退出登录', 'info');
+                        // 3秒后重置状态
+                        setTimeout(() => { this.logoutState = 0; }, 3000);
+                        return;
+                    }
+                    // 防止重复点击
+                    if (this.logoutState === 2) return;
+                    this.logoutState = 2;
 
-        // 自动保存当前 WebUI 地址到配置（供 Puppeteer 渲染使用）
-        async function saveWebUIUrl() {
-            try {
-                const webUIUrl = window.location.origin;
-                await authFetch('/config', {
-                    method: 'POST',
-                    body: JSON.stringify({ 'puppeteer.webUIUrl': webUIUrl })
-                });
-                console.log('[Bilibili] WebUI 地址已自动保存:', webUIUrl);
-            } catch (e) {
-                console.warn('[Bilibili] 保存 WebUI 地址失败:', e);
-            }
-        }
+                    try {
+                        await this.api('/login/logout', 'POST');
+                        await this.fetchLoginStatus();
+                        showToast('已退出登录', 'success');
+                        this.qrCode = { url: '', imgUrl: '', loading: false, key: '', status: '', statusText: '', isExpired: false, generating: false, timer: null };
+                    } catch (e) {
+                        showToast('退出登录失败: ' + e.message, 'error');
+                    } finally {
+                        this.logoutState = 0;
+                    }
+                },
 
-        // 初始化主题并监听系统主题变化
-        updateTheme();
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+                async generateQrCode() {
+                    // 防抖：如果正在生成中，直接返回
+                    if (this.qrCode.generating) return;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            saveWebUIUrl(); // 自动保存 WebUI 地址
-            loadStatus();
-            loadGroups();
-            checkLoginStatus();
-            setInterval(loadStatus, 60000);
-        });
-        window.addEventListener('beforeunload', () => { stopPolling(); stopUptimeTimer(); });
+                    this.qrCode.generating = true;
+                    this.qrCode.loading = true;
+                    this.qrCode.isExpired = false;
+                    this.qrCode.status = '';
+                    this.qrCode.statusText = '正在生成二维码...';
+                    this.qrCode.url = ''; // 清空旧二维码
 
-        /* 自定义表单交互脚本 */
-        function toggleSelect(id) {
-            const el = document.getElementById(id);
-            // 关闭其他打开的下拉框
-            document.querySelectorAll('.custom-select.active').forEach(s => {
-                if (s.id !== id) s.classList.remove('active');
-            });
-            el.classList.toggle('active');
-        }
+                    try {
+                        const res = await this.api('/login/qrcode/generate', 'POST');
+                        this.qrCode.url = res.url;
+                        this.qrCode.key = res.qrcode_key;
+                        // Use a QR code API or library. Here assuming we need to generate it locally or use an external API
+                        // Since we don't have a local QR lib, let's use a public API for display
+                        this.qrCode.imgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.url)}`;
+                        this.qrCode.statusText = '请使用 B 站 App 扫描二维码';
+                        this.qrCode.status = 'WAITING';
 
-        // 点击外部关闭下拉框
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.custom-select')) {
-                document.querySelectorAll('.custom-select.active').forEach(s => s.classList.remove('active'));
-            }
-        });
+                        this.pollQrCode();
+                    } catch (e) {
+                        this.qrCode.statusText = '生成失败，请重试';
+                        this.qrCode.url = '';
+                    }
+                    this.qrCode.loading = false;
+                    this.qrCode.generating = false;
+                },
 
-        function selectOption(selectId, value, label) {
-            const wrapper = document.getElementById(selectId);
-            const hiddenSelect = wrapper.querySelector('select');
+                pollQrCode() {
+                    if (this.qrCode.timer) clearInterval(this.qrCode.timer);
+                    this.qrCode.timer = setInterval(async () => {
+                        try {
+                            const res = await this.api(`/login/qrcode/poll?qrcode_key=${this.qrCode.key}`);
+                            this.qrCode.status = res.status;
+                            this.qrCode.statusText = res.statusText;
 
-            // 更新显示值
-            wrapper.querySelector('.selected-value').textContent = label;
-
-            // 更新内部状态
-            hiddenSelect.value = value;
-
-            // 更新选中样式
-            wrapper.querySelectorAll('.select-option').forEach(opt => {
-                if (opt.dataset.value === value) opt.classList.add('selected');
-                else opt.classList.remove('selected');
-            });
-
-            // 触发 change 事件
-            hiddenSelect.dispatchEvent(new Event('change'));
-
-            // 关闭下拉框
-            wrapper.classList.remove('active');
-        }
-
-        function adjustNumber(inputId, delta) {
-            const input = document.getElementById(inputId);
-            let val = parseInt(input.value) || 0;
-            const min = parseInt(input.min) || 0;
-            const max = parseInt(input.max) || 1000;
-
-            val += delta;
-
-            if (val < min) val = min;
-            if (val > max) val = max;
-
-            input.value = val;
-            input.dispatchEvent(new Event('change'));
-        }
-
-        function checkNumberInput(e) {
-            // 允许: backspace, delete, tab, escape, enter
-            if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
-                // 允许: Ctrl+A, Command+A
-                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
-                // 允许: home, end, left, right, down, up
-                (e.keyCode >= 35 && e.keyCode <= 40)) {
-                return;
-            }
-            // 确保是数字
-            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-                e.preventDefault();
+                            if (res.isSuccess) {
+                                clearInterval(this.qrCode.timer);
+                                this.qrCode.timer = null;
+                                this.qrCode.statusText = '登录成功！正在跳转...';
+                                await this.fetchLoginStatus();
+                                // 延迟跳转，让用户看到成功提示
+                                setTimeout(() => {
+                                    this.currentTab = 'dashboard';
+                                }, 1000);
+                            } else if (res.isExpired) {
+                                clearInterval(this.qrCode.timer);
+                                this.qrCode.timer = null;
+                                this.qrCode.isExpired = true;
+                                this.qrCode.statusText = '二维码已过期，请刷新';
+                            }
+                        } catch (e) {
+                            console.error('Poll QR code failed:', e);
+                        }
+                    }, 2000);
+                }
             }
         }
     </script>

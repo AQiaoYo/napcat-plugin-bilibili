@@ -51,9 +51,6 @@ function getStatusText(status: QrCodeLoginStatus): string {
     }
 }
 
-/** 路由前缀 */
-const ROUTE_PREFIX = '/bilibili';
-
 /**
  * 插件初始化函数
  * 负责加载配置、注册 WebUI 路由
@@ -78,17 +75,10 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
         // 注册 WebUI 路由
         try {
             const base = (ctx as any).router;
-            const wrapPath = (p: string) => {
-                if (!p) return ROUTE_PREFIX;
-                return p.startsWith('/') ? `${ROUTE_PREFIX}${p}` : `${ROUTE_PREFIX}/${p}`;
-            };
 
-            // 静态资源目录
-            if (base && base.static) base.static(wrapPath('/static'), 'webui');
-
-            // 插件信息脚本
+            // 插件信息脚本（必须在静态目录之前注册，否则会被静态目录拦截）
             if (base && base.get) {
-                base.get(wrapPath('/static/plugin-info.js'), (_req: any, res: any) => {
+                base.get('/static/plugin-info.js', (_req: any, res: any) => {
                     try {
                         res.type('application/javascript');
                         res.send(`window.__PLUGIN_NAME__ = ${JSON.stringify(ctx.pluginName)};`);
@@ -96,14 +86,20 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                         res.status(500).send('// failed to generate plugin-info');
                     }
                 });
+            }
 
+            // 静态资源目录（放在动态路由之后）
+            if (base && base.static) base.static('/static', 'webui');
+
+            // 其他 API 路由
+            if (base && base.get) {
                 // 基础信息接口
-                base.get(wrapPath('/info'), (_req: any, res: any) => {
+                base.get('/info', (_req: any, res: any) => {
                     res.json({ code: 0, data: { pluginName: ctx.pluginName } });
                 });
 
                 // 状态接口
-                base.get(wrapPath('/status'), (_req: any, res: any) => {
+                base.get('/status', (_req: any, res: any) => {
                     const uptime = pluginState.getUptime();
                     res.json({
                         code: 0,
@@ -118,12 +114,12 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 });
 
                 // 配置读取接口
-                base.get(wrapPath('/config'), (_req: any, res: any) => {
+                base.get('/config', (_req: any, res: any) => {
                     res.json({ code: 0, data: pluginState.getConfig() });
                 });
 
                 // 配置保存接口
-                base.post && base.post(wrapPath('/config'), async (req: any, res: any) => {
+                base.post && base.post('/config', async (req: any, res: any) => {
                     try {
                         let body = req.body;
                         if (!body || Object.keys(body).length === 0) {
@@ -149,7 +145,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 });
 
                 // 群列表接口
-                base.get(wrapPath('/groups'), async (_req: any, res: any) => {
+                base.get('/groups', async (_req: any, res: any) => {
                     try {
                         // 直接使用 ctx.actions.call 获取群列表
                         const groups: any[] = await ctx.actions.call(
@@ -178,7 +174,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 });
 
                 // 批量更新群配置接口
-                base.post && base.post(wrapPath('/groups/bulk-config'), async (req: any, res: any) => {
+                base.post && base.post('/groups/bulk-config', async (req: any, res: any) => {
                     try {
                         let body = req.body;
                         if (!body || Object.keys(body).length === 0) {
@@ -216,7 +212,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 });
 
                 // 更新群配置接口
-                base.post && base.post(wrapPath('/groups/:id/config'), async (req: any, res: any) => {
+                base.post && base.post('/groups/:id/config', async (req: any, res: any) => {
                     try {
                         const groupId = String(req.params?.id || '');
                         if (!groupId) {
@@ -250,7 +246,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 // ==================== B 站登录相关接口 ====================
 
                 // 获取登录状态
-                base.get(wrapPath('/login/status'), async (_req: any, res: any) => {
+                base.get('/login/status', async (_req: any, res: any) => {
                     try {
                         const status = await getLoginStatus();
                         res.json({ code: 0, data: status });
@@ -261,7 +257,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 });
 
                 // 生成登录二维码
-                base.post && base.post(wrapPath('/login/qrcode/generate'), async (_req: any, res: any) => {
+                base.post && base.post('/login/qrcode/generate', async (_req: any, res: any) => {
                     try {
                         const result = await generateQrCode();
                         if (result) {
@@ -282,7 +278,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 });
 
                 // 轮询二维码状态
-                base.get(wrapPath('/login/qrcode/poll'), async (req: any, res: any) => {
+                base.get('/login/qrcode/poll', async (req: any, res: any) => {
                     try {
                         const qrcode_key = req.query?.qrcode_key as string | undefined;
                         const result = await pollQrCodeStatus(qrcode_key);
@@ -305,7 +301,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 });
 
                 // 获取二维码会话状态
-                base.get(wrapPath('/login/qrcode/session'), async (_req: any, res: any) => {
+                base.get('/login/qrcode/session', async (_req: any, res: any) => {
                     try {
                         const session = getQrSessionStatus();
                         res.json({ code: 0, data: session });
@@ -315,7 +311,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
                 });
 
                 // 退出登录
-                base.post && base.post(wrapPath('/login/logout'), async (_req: any, res: any) => {
+                base.post && base.post('/login/logout', async (_req: any, res: any) => {
                     try {
                         await clearCredential();
                         res.json({ code: 0, message: '已退出登录' });
