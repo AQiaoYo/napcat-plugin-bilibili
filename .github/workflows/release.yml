@@ -86,29 +86,24 @@ jobs:
           set -euo pipefail
           CURRENT_TAG="${{ steps.version.outputs.version }}"
           
-          # 获取 tag 列表并找到上一个 tag
+          # 获取所有 tag 并按版本排序
           git fetch --tags --force
-          TAGS=( $(git tag -l "v*" --sort=version:refname) )
-          PREV_TAG=""
-          for i in "${!TAGS[@]}"; do
-            if [ "${TAGS[$i]}" = "$CURRENT_TAG" ]; then
-              if [ $i -gt 0 ]; then
-                PREV_TAG="${TAGS[$((i-1))]}"
-              fi
-              break
-            fi
-          done
-
+          
+          # 获取最新的已存在 tag 作为上一个版本
+          PREV_TAG=$(git tag -l "v*" --sort=version:refname | tail -1)
+          
           if [ -z "$PREV_TAG" ]; then
+            # 如果没有任何 tag，使用仓库的第一个 commit
             PREV_TAG=$(git rev-list --max-parents=0 HEAD | head -1)
           fi
+          echo "Current tag: $CURRENT_TAG"
           echo "Previous tag: $PREV_TAG"
 
-          # 获取提交记录和差异
-          COMMITS=$(git log --pretty=format:'- %s (%h)' "$PREV_TAG".."$CURRENT_TAG" 2>/dev/null || git log --pretty=format:'- %s (%h)' -10)
-          SUMMARY_LINE=$(git diff --stat "$PREV_TAG".."$CURRENT_TAG" | tail -1 || echo "No changes")
-          FILE_CHANGES=$(git diff --stat "$PREV_TAG".."$CURRENT_TAG" | head -n -1 | head -30 || echo "")
-          CODE_DIFF=$(git diff "$PREV_TAG".."$CURRENT_TAG" -- 'src/*.ts' | head -c 5000 || echo "Diff too large or no code changes")
+          # 获取提交记录和差异（使用 HEAD 而不是可能不存在的 CURRENT_TAG）
+          COMMITS=$(git log --pretty=format:'- %s (%h)' "$PREV_TAG"..HEAD 2>/dev/null || git log --pretty=format:'- %s (%h)' -10)
+          SUMMARY_LINE=$(git diff --stat "$PREV_TAG"..HEAD | tail -1 || echo "No changes")
+          FILE_CHANGES=$(git diff --stat "$PREV_TAG"..HEAD | head -n -1 | head -30 || echo "")
+          CODE_DIFF=$(git diff "$PREV_TAG"..HEAD -- 'src/*.ts' | head -c 5000 || echo "Diff too large or no code changes")
 
           # 构建请求
           SYSTEM_PROMPT=$(cat .github/prompt/release_note_prompt.txt)
