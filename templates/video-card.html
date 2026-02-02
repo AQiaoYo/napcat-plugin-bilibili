@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=800">
     <title>Bilibili Video Card</title>
     <style>
+        :root {
+            --bili-pink: #FB7299;
+            --bili-pink-light: #fc8bab;
+            --bili-blue: #00A1D6;
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,17 +21,23 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e8eaed 100%);
             padding: 20px;
+            min-height: 100vh;
         }
 
         .video-card {
             width: 760px;
-            background: #ffffff;
-            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow:
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 10px 30px -5px rgba(0, 0, 0, 0.1),
+                0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         /* 封面区域 */
@@ -45,45 +59,54 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 120px;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+            height: 140px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
         }
 
         .duration-badge {
             position: absolute;
             bottom: 12px;
             right: 12px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
             color: #fff;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .duration-badge svg {
+            opacity: 0.9;
         }
 
         .tname-badge {
             position: absolute;
             top: 12px;
             left: 12px;
-            background: #fb7299;
+            background: var(--bili-pink);
             color: #fff;
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(251, 114, 153, 0.4);
         }
 
         /* 内容区域 */
         .content-section {
-            padding: 20px 24px;
+            padding: 24px 28px;
         }
 
         .video-title {
             font-size: 20px;
-            font-weight: 600;
-            color: #212121;
-            line-height: 1.4;
-            margin-bottom: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1.5;
+            margin-bottom: 20px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -94,18 +117,21 @@
         .owner-section {
             display: flex;
             align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(251, 114, 153, 0.08) 0%, rgba(0, 161, 214, 0.05) 100%);
+            border-radius: 14px;
+            border: 1px solid rgba(251, 114, 153, 0.1);
         }
 
         .owner-avatar {
-            width: 48px;
-            height: 48px;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
             object-fit: cover;
-            margin-right: 12px;
-            border: 2px solid #fb7299;
+            margin-right: 14px;
+            border: 3px solid var(--bili-pink);
+            box-shadow: 0 2px 8px rgba(251, 114, 153, 0.3);
         }
 
         .owner-info {
@@ -114,14 +140,24 @@
 
         .owner-name {
             font-size: 16px;
-            font-weight: 500;
-            color: #212121;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .owner-name svg {
+            color: var(--bili-pink);
         }
 
         .publish-date {
             font-size: 13px;
-            color: #999;
-            margin-top: 2px;
+            color: #6b7280;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* 统计数据 */
@@ -129,53 +165,74 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .stat-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 12px 8px;
-            background: #f8f9fa;
-            border-radius: 10px;
+            padding: 16px 12px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 1px solid #f3f4f6;
         }
 
         .stat-icon {
-            font-size: 20px;
-            margin-bottom: 4px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bili-pink) 0%, var(--bili-pink-light) 100%);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 6px rgba(251, 114, 153, 0.3);
+        }
+
+        .stat-icon svg {
+            color: #fff;
         }
 
         .stat-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: #212121;
+            font-size: 17px;
+            font-weight: 700;
+            color: #1f2937;
         }
 
         .stat-label {
             font-size: 12px;
-            color: #999;
-            margin-top: 2px;
+            color: #9ca3af;
+            margin-top: 4px;
+            font-weight: 500;
         }
 
         /* 视频简介 */
         .desc-section {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px 18px;
+            border: 1px solid #f3f4f6;
         }
 
         .desc-title {
             font-size: 13px;
-            color: #999;
-            margin-bottom: 6px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .desc-title svg {
+            color: var(--bili-pink);
         }
 
         .desc-content {
             font-size: 14px;
-            color: #666;
-            line-height: 1.6;
+            color: #4b5563;
+            line-height: 1.7;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
@@ -187,8 +244,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, #fb7299 0%, #fc8bab 100%);
+            padding: 18px 28px;
+            background: linear-gradient(135deg, var(--bili-pink) 0%, var(--bili-pink-light) 100%);
             color: #fff;
         }
 
@@ -196,25 +253,29 @@
             display: flex;
             align-items: center;
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 700;
+            gap: 10px;
+            letter-spacing: 0.5px;
         }
 
         .bilibili-logo svg {
-            width: 32px;
-            height: 32px;
-            margin-right: 8px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
         .video-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 14px;
-            opacity: 0.9;
         }
 
         .bvid {
             font-weight: 600;
             background: rgba(255, 255, 255, 0.2);
-            padding: 4px 10px;
-            border-radius: 4px;
+            backdrop-filter: blur(4px);
+            padding: 6px 14px;
+            border-radius: 8px;
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
@@ -226,7 +287,14 @@
             <img class="cover-image" src="{{cover}}" alt="视频封面">
             <div class="cover-overlay"></div>
             <span class="tname-badge">{{tname}}</span>
-            <span class="duration-badge">{{duration}}</span>
+            <span class="duration-badge">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                {{duration}}
+            </span>
         </div>
 
         <!-- 内容区域 -->
@@ -238,30 +306,61 @@
             <div class="owner-section">
                 <img class="owner-avatar" src="{{ownerFace}}" alt="UP主头像">
                 <div class="owner-info">
-                    <div class="owner-name">{{ownerName}}</div>
-                    <div class="publish-date">发布于 {{pubdate}}</div>
+                    <div class="owner-name">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path
+                                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg>
+                        {{ownerName}}
+                    </div>
+                    <div class="publish-date">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" opacity="0.7">
+                            <path
+                                d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+                        </svg>
+                        发布于 {{pubdate}}
+                    </div>
                 </div>
             </div>
 
             <!-- 统计数据 -->
             <div class="stats-section">
                 <div class="stat-item">
-                    <span class="stat-icon">▶️</span>
+                    <span class="stat-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    </span>
                     <span class="stat-value">{{view}}</span>
                     <span class="stat-label">播放</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-icon">💬</span>
+                    <span class="stat-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path
+                                d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
+                        </svg>
+                    </span>
                     <span class="stat-value">{{danmaku}}</span>
                     <span class="stat-label">弹幕</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-icon">👍</span>
+                    <span class="stat-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path
+                                d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" />
+                        </svg>
+                    </span>
                     <span class="stat-value">{{like}}</span>
                     <span class="stat-label">点赞</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-icon">⭐</span>
+                    <span class="stat-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path
+                                d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
+                    </span>
                     <span class="stat-value">{{favorite}}</span>
                     <span class="stat-label">收藏</span>
                 </div>
@@ -269,7 +368,13 @@
 
             <!-- 视频简介 -->
             <div class="desc-section">
-                <div class="desc-title">📝 视频简介</div>
+                <div class="desc-title">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path
+                            d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                    </svg>
+                    视频简介
+                </div>
                 <div class="desc-content">{{desc}}</div>
             </div>
         </div>
@@ -277,13 +382,17 @@
         <!-- 底部 -->
         <div class="footer-section">
             <div class="bilibili-logo">
-                <svg viewBox="0 0 2299 1024" fill="currentColor">
+                <svg viewBox="0 0 1071 1024" width="28" height="28" fill="currentColor">
                     <path
-                        d="M1775.840256 322.396672c6.144-48.810667 9.557333-98.474667 9.557333-148.821333 0-21.162667-0.682667-42.154667-2.048-62.976h93.866667c-1.365333 20.821333-2.048 41.813333-2.048 62.976 0 50.346667 3.413333 100.010667 9.557333 148.821333h206.506667v82.261333h-191.146667c27.306667 108.373333 71.338667 210.773333 129.365334 303.274667-43.008 34.133333-81.578667 73.728-114.346667 117.930667-49.834667-87.893333-87.722667-184.661333-111.274667-287.402667v307.882667c0 45.397333-36.181333 82.261333-80.896 82.261333h-108.202666l-17.749334-82.261333h108.202667V404.650667h-191.146667v-82.261334h261.802667z m-105.130667 0h-156.330667v-82.261333h156.330667c-6.144-48.810667-9.557333-98.474667-9.557333-148.821333 0-21.162667 0.682667-42.154667 2.048-62.976h-93.866667c1.365333 20.821333 2.048 41.813333 2.048 62.976 0 50.346667-3.413333 100.010667-9.557333 148.821333h-261.802667v82.261333h191.146667v424.106667h-108.202667l17.749334 82.261333h108.202666c44.714667 0 80.896-36.864 80.896-82.261333V418.474667c23.552 102.741333 61.44 199.509333 111.274667 287.402666 32.768-44.202667 71.338667-83.797333 114.346667-117.930666-58.026667-92.501333-102.058667-194.901333-129.365334-303.274667h191.146667v-82.261333h-206.506666z" />
+                        d="M887.365188 952.783894H184.455499C82.758914 952.783894 0 876.72402 0 783.272408V336.111466c0-93.477378 82.758914-169.537251 184.455499-169.537252h704.043373c51.969094 0 101.67082 20.225949 136.377002 55.498973A159.256801 159.256801 0 0 1 1071.846453 336.420652V783.272408c0 93.451613-82.758914 169.511486-184.481265 169.511486zM184.455499 251.600495c-54.829069 0-99.429218 37.901109-99.429218 84.510971V783.272408c0 46.609861 44.600149 84.51097 99.429218 84.51097H887.365188c54.829069 0 99.429218-37.901109 99.429218-84.51097V335.415796a74.539706 74.539706 0 0 0-22.570613-53.72115c-18.808844-19.11803-46.377972-30.09415-75.750687-30.094151z" />
                     <path
-                        d="M350.890667 216.746667L76.629333 490.666667h164.181334v371.370666H0V548.266667L274.261333 274.346667H0V216.746667h350.890667z m233.472 0v57.6H420.181333l-0.341333 274.261333h164.522667v57.941333l-274.261334 273.92v-57.6h164.181334l0.341333-274.261333H310.101333v-57.6l274.261334-274.261333z" />
+                        d="M397.794168 495.316736L219.651226 535.923226a36.355177 36.355177 0 0 1-15.175903-71.112889l178.142942-40.55496a35.8141 35.8141 0 0 1 43.131513 27.955611c4.302845 19.169562-8.786049 38.854434-27.95561 43.157279zM674.052285 495.316736c-19.169562-4.302845-32.258456-23.987717-27.955611-43.157279a35.8141 35.8141 0 0 1 43.131514-27.955611l178.142941 40.55496a36.355177 36.355177 0 0 1-15.175902 71.112889l-178.142942-40.554959zM268.811876 1023.999845a56.684187 56.684187 0 0 1-56.684187-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015zM803.034577 1023.999845a56.684187 56.684187 0 0 1-56.813015-56.813015v-42.590437a56.684187 56.684187 0 1 1 113.600264 0v42.590437a56.684187 56.684187 0 0 1-56.684187 56.813015z" />
                     <path
-                        d="M1117.013333 216.746667v645.290666h-57.941333V274.346667H894.890667v587.690666h-57.6V216.746667h279.722666z m233.472 0L1076.224 490.666667h164.181333v371.370666h-57.941333V548.266667l274.261333-273.92H1292.544V216.746667h57.941333z" />
+                        d="M248.918821 42.946487m26.538343-29.671097l0 0q26.538343-29.671097 56.20944-3.132755l185.900469 166.272595q29.671097 26.538343 3.132754 56.20944l0 0q-26.538343 29.671097-56.20944 3.132755l-185.900468-166.272595q-29.671097-26.538343-3.132755-56.20944Z" />
+                    <path
+                        d="M577.629382 262.330313m-26.538343-29.671098l0 0q-26.538343-29.671097 3.132755-56.20944l185.900468-166.272595q29.671097-26.538343 56.209441 3.132755l0 0q26.538343 29.671097-3.132755 56.20944l-185.900468 166.272595q-29.671097 26.538343-56.209441-3.132755Z" />
+                    <path
+                        d="M595.621982 756.373184a39.447041 39.447041 0 0 1-30.738289-14.686357L533.346672 702.677799l-32.438814 38.467951a39.730462 39.730462 0 0 1-55.473207 5.153108l-44.316729-36.535535a23.188986 23.188986 0 1 1 29.501543-35.762569l39.163621 32.258455 33.495202-39.601634a39.6274 39.6274 0 0 1 61.038563 0.566842l32.722236 40.323069 45.424646-33.933215A23.188986 23.188986 0 1 1 669.904033 710.665117l-50.655051 37.798047a39.369745 39.369745 0 0 1-23.627 7.91002z" />
                 </svg>
                 bilibili
             </div>
