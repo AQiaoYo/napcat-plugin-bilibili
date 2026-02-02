@@ -27,12 +27,23 @@ export const DEFAULT_CONFIG: PluginConfig = {
 export function initConfigUI(ctx: NapCatPluginContext) {
     const schema = ctx.NapCatConfig.combine(
         ctx.NapCatConfig.html(`
-            <div style="padding: 16px; background: #e0f2fe; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0ea5e9;">
-                <h3 style="margin: 0; color: #0c4a6e;">📺 B站视频链接解析</h3>
-                <p style="margin: 8px 0 0; color: #075985; font-size: 14px;">本插件的详细配置已移动到独立的 WebUI 仪表盘中。</p>
-                <p style="margin: 12px 0 0;">
-                    <a href="/webui/bilibili" target="_blank" style="display: inline-block; padding: 6px 12px; background: #0ea5e9; color: white; border-radius: 4px; text-decoration: none; font-size: 14px;">打开控制台</a>
-                </p>
+            <div style="padding: 20px; background: #FFF5F7; border-radius: 12px; margin-bottom: 20px; border: 1px solid #FFE4E9; display: flex; align-items: center; gap: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <div style="width: 48px; height: 48px; border-radius: 10px; background: #FB7299; display: flex; align-items: center; justify-content: center; flex-shrink: 0; shadow: 0 4px 12px rgba(251, 114, 153, 0.2);">
+                    <svg width="28" height="28" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="6" y="14" width="36" height="26" rx="2" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 14C16 14 19.3333 10 24 10C28.6667 10 32 14 32 14" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="18" cy="24" r="2" fill="white"/>
+                        <circle cx="30" cy="24" r="2" fill="white"/>
+                    </svg>
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0; color: #18191C; font-size: 16px; font-weight: bold;">B站视频解析</h3>
+                    <p style="margin: 4px 0 0; color: #61666D; font-size: 13px; line-height: 1.5;">
+                        配置已由独立的控制台管理。请点击侧边栏中的 
+                        <span style="color: #FB7299; font-weight: bold; background: #FFE4E9; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">扩展页面</span> 
+                        菜单进入仪表盘。
+                    </p>
+                </div>
             </div>
         `)
     );

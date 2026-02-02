@@ -460,6 +460,107 @@
         .animate-group-item {
             animation: groupItemIn 0.4s var(--ease-spring) both;
         }
+
+        /* ========== 配置说明卡片 ========== */
+        .config-explanation {
+            padding: 20px;
+            background: #FFF5F7;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #FFE4E9;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .config-explanation .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: #FB7299;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(251, 114, 153, 0.2);
+        }
+
+        .config-explanation h3 {
+            margin: 0;
+            color: #18191C;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .config-explanation p {
+            margin: 4px 0 0;
+            color: #61666D;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Toast 消息弹窗 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            animation: toastIn 0.5s var(--ease-spring) both;
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+        }
+
+        .toast.hiding {
+            animation: toastOut 0.4s var(--ease-smooth) both;
+        }
+
+        .toast.toast-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .toast.toast-error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .toast.toast-info {
+            background: linear-gradient(135deg, #FB7299 0%, #e05a80 100%);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%) scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%) scale(0.8);
+            }
+        }
     </style>
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -475,13 +576,14 @@
     <aside
         class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col transition-all duration-300 z-20 flex-shrink-0">
         <div class="h-16 flex items-center px-6 border-b border-gray-100 dark:border-slate-700">
-            <div class="w-8 h-8 rounded-lg bg-bili-pink flex items-center justify-center text-white mr-3">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
-                    </path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3">
+                <svg class="w-7 h-7" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M204.288 63.488c-8.704 8.192-16.896 20.48-18.944 26.624-3.584 11.776 12.8 62.464 20.48 62.464S235.52 176.128 235.52 184.32c0 16.384-17.92 26.112-47.104 26.112-34.816 0-104.448 27.648-128.512 51.2-9.216 8.704-26.112 33.792-37.888 56.32L0 358.4v469.504l21.504 40.448c24.576 47.616 35.84 59.392 82.944 84.992l40.96 22.528h722.944l40.96-19.968c51.712-24.576 72.704-45.056 95.744-94.72l17.92-38.4v-231.424l0.512-231.424-17.92-36.352c-9.216-20.48-28.16-47.104-42.496-59.904-31.232-30.208-86.528-54.272-122.368-54.272-54.272 0-65.024-22.528-26.624-57.856 20.48-18.432 23.04-25.088 23.04-45.568 0-19.968-3.584-28.16-16.896-41.984-9.216-9.216-22.528-16.896-29.696-16.896-11.776 0-34.304 9.216-40.448 16.896-1.536 1.536-35.84 35.328-75.776 74.24l-73.216 71.168-83.456-0.512c-45.568 0-88.064-2.56-93.696-4.608-5.632-2.56-38.4-31.232-72.704-65.024C249.856 40.448 235.008 32.256 204.288 63.488z m652.8 262.656c5.12 0.512 19.968 9.216 31.744 20.48l21.504 19.968 1.536 217.088c1.024 197.12 0.512 218.112-8.704 236.032-14.336 27.136-34.816 40.448-65.536 41.984-14.336 0.512-173.568 0.512-353.28 0l-326.144-1.536-45.056-45.056V373.248l20.992-22.528c15.872-17.92 25.6-23.552 41.984-25.088 16.384-1.024 634.88-0.512 680.96 0.512z"
+                        fill="#FC8BAB"></path>
+                    <path
+                        d="M279.04 502.272c-20.48 22.016-20.992 25.088-20.992 66.56 0 39.936 1.024 44.544 17.92 64 29.184 33.28 55.808 32.256 84.48-2.56 11.264-12.8 12.8-22.016 13.312-64 0-47.104-0.512-48.64-19.968-68.096-27.136-27.648-47.616-26.112-74.752 4.096z m393.216-3.584c-18.944 18.944-19.968 20.992-19.968 69.12 0 47.616 0.512 49.664 18.432 67.072 24.576 23.552 35.84 26.624 58.368 13.824 29.184-16.896 39.936-43.52 36.864-90.624-2.56-35.328-4.608-41.984-22.016-59.904-25.088-25.6-45.568-25.6-71.68 0.512z"
+                        fill="#FC8BAB"></path>
                 </svg>
             </div>
             <span class="font-bold text-lg tracking-tight">NapCat Bilibili</span>
