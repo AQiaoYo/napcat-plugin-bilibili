@@ -10,7 +10,7 @@ import type { BilibiliVideoInfo } from '../types';
 import { formatNumber, formatDuration } from './bilibili-service';
 
 /** Puppeteer 插件 API 基础路径 */
-const PUPPETEER_API_BASE = '/api/Plugin/ext/napcat-plugin-puppeteer';
+const PUPPETEER_API_BASE = '/plugin/napcat-plugin-puppeteer/api';
 
 /** 渲染结果接口 */
 export interface RenderResult {
