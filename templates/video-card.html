@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=800">
+    <title>Bilibili Video Card</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .video-card {
+            width: 760px;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 封面区域 */
+        .cover-section {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            overflow: hidden;
+        }
+
+        .cover-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cover-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+        }
+
+        .duration-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .tname-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: #fb7299;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* 内容区域 */
+        .content-section {
+            padding: 20px 24px;
+        }
+
+        .video-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #212121;
+            line-height: 1.4;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* UP主信息 */
+        .owner-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .owner-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+            border: 2px solid #fb7299;
+        }
+
+        .owner-info {
+            flex: 1;
+        }
+
+        .owner-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #212121;
+        }
+
+        .publish-date {
+            font-size: 13px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        /* 统计数据 */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 8px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #212121;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        /* 视频简介 */
+        .desc-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+
+        .desc-title {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 6px;
+        }
+
+        .desc-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* 底部链接 */
+        .footer-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #fb7299 0%, #fc8bab 100%);
+            color: #fff;
+        }
+
+        .bilibili-logo {
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .bilibili-logo svg {
+            width: 32px;
+            height: 32px;
+            margin-right: 8px;
+        }
+
+        .video-link {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .bvid {
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="video-card">
+        <!-- 封面区域 -->
+        <div class="cover-section">
+            <img class="cover-image" src="{{cover}}" alt="视频封面">
+            <div class="cover-overlay"></div>
+            <span class="tname-badge">{{tname}}</span>
+            <span class="duration-badge">{{duration}}</span>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-section">
+            <!-- 标题 -->
+            <h1 class="video-title">{{title}}</h1>
+
+            <!-- UP主信息 -->
+            <div class="owner-section">
+                <img class="owner-avatar" src="{{ownerFace}}" alt="UP主头像">
+                <div class="owner-info">
+                    <div class="owner-name">{{ownerName}}</div>
+                    <div class="publish-date">发布于 {{pubdate}}</div>
+                </div>
+            </div>
+
+            <!-- 统计数据 -->
+            <div class="stats-section">
+                <div class="stat-item">
+                    <span class="stat-icon">▶️</span>
+                    <span class="stat-value">{{view}}</span>
+                    <span class="stat-label">播放</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">💬</span>
+                    <span class="stat-value">{{danmaku}}</span>
+                    <span class="stat-label">弹幕</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">👍</span>
+                    <span class="stat-value">{{like}}</span>
+                    <span class="stat-label">点赞</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value">{{favorite}}</span>
+                    <span class="stat-label">收藏</span>
+                </div>
+            </div>
+
+            <!-- 视频简介 -->
+            <div class="desc-section">
+                <div class="desc-title">📝 视频简介</div>
+                <div class="desc-content">{{desc}}</div>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer-section">
+            <div class="bilibili-logo">
+                <svg viewBox="0 0 2299 1024" fill="currentColor">
+                    <path
+                        d="M1775.840256 322.396672c6.144-48.810667 9.557333-98.474667 9.557333-148.821333 0-21.162667-0.682667-42.154667-2.048-62.976h93.866667c-1.365333 20.821333-2.048 41.813333-2.048 62.976 0 50.346667 3.413333 100.010667 9.557333 148.821333h206.506667v82.261333h-191.146667c27.306667 108.373333 71.338667 210.773333 129.365334 303.274667-43.008 34.133333-81.578667 73.728-114.346667 117.930667-49.834667-87.893333-87.722667-184.661333-111.274667-287.402667v307.882667c0 45.397333-36.181333 82.261333-80.896 82.261333h-108.202666l-17.749334-82.261333h108.202667V404.650667h-191.146667v-82.261334h261.802667z m-105.130667 0h-156.330667v-82.261333h156.330667c-6.144-48.810667-9.557333-98.474667-9.557333-148.821333 0-21.162667 0.682667-42.154667 2.048-62.976h-93.866667c1.365333 20.821333 2.048 41.813333 2.048 62.976 0 50.346667-3.413333 100.010667-9.557333 148.821333h-261.802667v82.261333h191.146667v424.106667h-108.202667l17.749334 82.261333h108.202666c44.714667 0 80.896-36.864 80.896-82.261333V418.474667c23.552 102.741333 61.44 199.509333 111.274667 287.402666 32.768-44.202667 71.338667-83.797333 114.346667-117.930666-58.026667-92.501333-102.058667-194.901333-129.365334-303.274667h191.146667v-82.261333h-206.506666z" />
+                    <path
+                        d="M350.890667 216.746667L76.629333 490.666667h164.181334v371.370666H0V548.266667L274.261333 274.346667H0V216.746667h350.890667z m233.472 0v57.6H420.181333l-0.341333 274.261333h164.522667v57.941333l-274.261334 273.92v-57.6h164.181334l0.341333-274.261333H310.101333v-57.6l274.261334-274.261333z" />
+                    <path
+                        d="M1117.013333 216.746667v645.290666h-57.941333V274.346667H894.890667v587.690666h-57.6V216.746667h279.722666z m233.472 0L1076.224 490.666667h164.181333v371.370666h-57.941333V548.266667l274.261333-273.92H1292.544V216.746667h57.941333z" />
+                </svg>
+                bilibili
+            </div>
+            <div class="video-link">
+                <span class="bvid">{{bvid}}</span>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
