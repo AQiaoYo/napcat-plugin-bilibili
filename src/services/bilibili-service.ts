@@ -138,6 +138,24 @@ export function extractLinkFromSegments(segments: any[]): string | null {
                         return url;
                     }
                 }
+
+                // 兜底：处理旧版卡片格式（无特定 app 标识）
+                // 尝试从 meta.detail_1.qqdocurl 获取
+                const detail1 = meta.detail_1 || {};
+                if (detail1.qqdocurl) {
+                    const url = detail1.qqdocurl;
+                    if (url.includes('b23.tv') || url.includes('bilibili.com')) {
+                        return url;
+                    }
+                }
+                // 尝试从 meta.news.jumpUrl 获取（兜底）
+                const newsAlt = meta.news || {};
+                if (newsAlt.jumpUrl) {
+                    const url = newsAlt.jumpUrl;
+                    if (url.includes('b23.tv') || url.includes('bilibili.com')) {
+                        return url;
+                    }
+                }
             } catch (e) {
                 // 解析失败忽略
             }
