@@ -163,3 +163,87 @@ jobs:
             napcat-plugin-bilibili.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Plugin Index and Create PR
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          set -euo pipefail
+          
+          VERSION="${{ steps.version.outputs.clean_version }}"
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          PLUGIN_ID="napcat-plugin-bilibili"
+          INDEX_REPO="NapNeko/napcat-plugin-index"
+          FORK_OWNER="${{ github.repository_owner }}"
+          BRANCH_NAME="update-${PLUGIN_ID}-${TAG_VERSION}"
+          
+          echo "📦 Updating plugin index for ${PLUGIN_ID} to version ${VERSION}"
+          
+          # 配置 git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Fork 仓库（如果已存在会跳过）
+          gh repo fork "${INDEX_REPO}" --clone=false || true
+          
+          # 克隆 fork 的仓库
+          cd ..
+          rm -rf napcat-plugin-index
+          gh repo clone "${FORK_OWNER}/napcat-plugin-index" -- --depth=1
+          cd napcat-plugin-index
+          
+          # 同步上游
+          git remote add upstream "https://github.com/${INDEX_REPO}.git" || true
+          git fetch upstream main
+          git checkout -B "${BRANCH_NAME}" upstream/main
+          
+          # 更新 plugins.v4.json
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_VERSION}/${PLUGIN_ID}.zip"
+          UPDATE_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          # 使用 jq 更新版本号和下载链接
+          jq --arg id "${PLUGIN_ID}" \
+             --arg version "${VERSION}" \
+             --arg downloadUrl "${DOWNLOAD_URL}" \
+             --arg updateTime "${UPDATE_TIME}" \
+             '
+             .updateTime = $updateTime |
+             .plugins = [.plugins[] | if .id == $id then .version = $version | .downloadUrl = $downloadUrl else . end]
+             ' plugins.v4.json > plugins.v4.json.tmp && mv plugins.v4.json.tmp plugins.v4.json
+          
+          # 检查是否有变化
+          if git diff --quiet plugins.v4.json; then
+            echo "⏭️ No changes detected, skipping PR creation"
+            exit 0
+          fi
+          
+          # 提交并推送
+          git add plugins.v4.json
+          git commit -m "chore(${PLUGIN_ID}): update to ${TAG_VERSION}"
+          git push -f "https://${GH_TOKEN}@github.com/${FORK_OWNER}/napcat-plugin-index.git" "${BRANCH_NAME}"
+          
+          # 创建 PR（如果不存在）
+          PR_TITLE="chore(${PLUGIN_ID}): update to ${TAG_VERSION}"
+          PR_BODY="## 🔄 Plugin Update
+
+          - **Plugin**: ${PLUGIN_ID}
+          - **Version**: ${VERSION}
+          - **Release**: https://github.com/${{ github.repository }}/releases/tag/${TAG_VERSION}
+
+          ---
+          *This PR was automatically created by GitHub Actions.*"
+          
+          # 检查是否已存在 PR
+          EXISTING_PR=$(gh pr list --repo "${INDEX_REPO}" --head "${FORK_OWNER}:${BRANCH_NAME}" --json number --jq '.[0].number' || echo "")
+          
+          if [ -n "$EXISTING_PR" ]; then
+            echo "✅ PR #${EXISTING_PR} already exists, updated branch"
+          else
+            gh pr create \
+              --repo "${INDEX_REPO}" \
+              --head "${FORK_OWNER}:${BRANCH_NAME}" \
+              --base main \
+              --title "${PR_TITLE}" \
+              --body "${PR_BODY}"
+            echo "✅ PR created successfully"
+          fi
