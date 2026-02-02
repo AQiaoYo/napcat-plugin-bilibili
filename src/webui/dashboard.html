@@ -2098,11 +2098,31 @@
             }
         }
 
+        // 自动保存当前 WebUI 地址到配置（供 Puppeteer 渲染使用）
+        async function saveWebUIUrl() {
+            try {
+                const webUIUrl = window.location.origin;
+                await authFetch('/config', {
+                    method: 'POST',
+                    body: JSON.stringify({ 'puppeteer.webUIUrl': webUIUrl })
+                });
+                console.log('[Bilibili] WebUI 地址已自动保存:', webUIUrl);
+            } catch (e) {
+                console.warn('[Bilibili] 保存 WebUI 地址失败:', e);
+            }
+        }
+
         // 初始化主题并监听系统主题变化
         updateTheme();
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
 
-        document.addEventListener('DOMContentLoaded', () => { loadStatus(); loadGroups(); checkLoginStatus(); setInterval(loadStatus, 60000); });
+        document.addEventListener('DOMContentLoaded', () => {
+            saveWebUIUrl(); // 自动保存 WebUI 地址
+            loadStatus();
+            loadGroups();
+            checkLoginStatus();
+            setInterval(loadStatus, 60000);
+        });
         window.addEventListener('beforeunload', () => { stopPolling(); stopUptimeTimer(); });
 
         /* 自定义表单交互脚本 */
