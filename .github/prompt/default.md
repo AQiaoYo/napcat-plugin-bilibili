@@ -8,5 +8,4 @@
 2. 解压到 NapCat 的 `plugins` 目录
 3. 重启 NapCat
 
----
-**Full Changelog**: https://github.com/AQiaoYo/napcat-plugin-bilibili/compare/{PREV_VERSION}...{VERSION}
+其实你可以在WebUi中安装的...
