@@ -66,10 +66,11 @@ jobs:
           cp dist/index.mjs release/
           cp package.json release/
           cp -r src/webui release/
+          cp -r templates release/
           
           # 进入临时目录并压缩
           cd release
-          zip -r ../napcat-plugin-bilibili.zip index.mjs package.json webui
+          zip -r ../napcat-plugin-bilibili.zip index.mjs package.json webui templates
           
       - name: Verify zip contents
         run: |
