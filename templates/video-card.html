@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=800">
+    <meta name="referrer" content="no-referrer">
     <title>Bilibili Video Card</title>
     <style>
         :root {
@@ -284,7 +285,7 @@
     <div class="video-card">
         <!-- 封面区域 -->
         <div class="cover-section">
-            <img class="cover-image" src="{{cover}}" alt="视频封面">
+            <img class="cover-image" src="{{cover}}" alt="视频封面" referrerpolicy="no-referrer">
             <div class="cover-overlay"></div>
             <span class="tname-badge">{{tname}}</span>
             <span class="duration-badge">
@@ -304,7 +305,7 @@
 
             <!-- UP主信息 -->
             <div class="owner-section">
-                <img class="owner-avatar" src="{{ownerFace}}" alt="UP主头像">
+                <img class="owner-avatar" src="{{ownerFace}}" alt="UP主头像" referrerpolicy="no-referrer">
                 <div class="owner-info">
                     <div class="owner-name">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">

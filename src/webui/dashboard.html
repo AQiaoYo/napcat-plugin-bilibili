@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
     <title>B站视频解析 · 控制台</title>
     <!-- plugin-info.js 由后端动态生成，设置 window.__PLUGIN_NAME__ -->
     <!-- 使用 onerror 防止加载失败时阻塞页面，resolvePluginName() 有 fallback 逻辑 -->
@@ -701,7 +702,7 @@
                         <div x-show="loginStatus.isLogin && loginStatus.loaded" x-transition
                             class="flex items-start gap-4">
                             <!-- 头像 -->
-                            <img :src="loginStatus.face"
+                            <img :src="loginStatus.face" referrerpolicy="no-referrer"
                                 class="w-12 h-12 rounded-full border-2 border-white dark:border-slate-600 ring-2 ring-bili-pink shadow-sm object-cover flex-shrink-0"
                                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23FB7299%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22>B</text></svg>'">
                             <!-- 信息 -->
