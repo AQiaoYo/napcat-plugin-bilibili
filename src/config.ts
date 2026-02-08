@@ -3,7 +3,7 @@
  * 定义默认配置和 WebUI 配置 Schema
  */
 
-import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin-manger';
+import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
 import type { PluginConfig } from './types';
 
 /** 默认配置 */

@@ -12,7 +12,7 @@
  */
 
 // @ts-ignore - NapCat 类型定义
-import type { PluginModule, NapCatPluginContext, PluginConfigSchema, PluginConfigUIController } from 'napcat-types/napcat-onebot/network/plugin-manger';
+import type { PluginModule, NapCatPluginContext, PluginConfigSchema, PluginConfigUIController } from 'napcat-types/napcat-onebot/network/plugin/types';
 // @ts-ignore - NapCat 消息类型
 import type { OB11Message } from 'napcat-types/napcat-onebot';
 // @ts-ignore - NapCat 事件类型
@@ -55,7 +55,7 @@ function getStatusText(status: QrCodeLoginStatus): string {
  * 插件初始化函数
  * 负责加载配置、注册 WebUI 路由
  */
-const plugin_init = async (ctx: NapCatPluginContext) => {
+export const plugin_init: PluginModule['plugin_init'] = async (ctx) => {
     try {
         pluginState.initFromContext(ctx);
         pluginState.loadConfig(ctx);
@@ -346,7 +346,7 @@ const plugin_init = async (ctx: NapCatPluginContext) => {
  * 消息处理函数
  * 当收到群消息时触发，检测并解析 B 站链接
  */
-const plugin_onmessage = async (ctx: NapCatPluginContext, event: OB11Message) => {
+export const plugin_onmessage: PluginModule['plugin_onmessage'] = async (ctx, event) => {
     if (!pluginState.config.enabled) return;
     if (event.post_type !== EventType.MESSAGE || !event.raw_message) return;
     await handleMessage(ctx, event as OB11Message);
@@ -354,25 +354,29 @@ const plugin_onmessage = async (ctx: NapCatPluginContext, event: OB11Message) =>
 
 /**
  * 插件卸载函数
+ * 热重载时会调用此函数清理资源，必须释放所有定时器、连接等
  */
-const plugin_cleanup = async (ctx: NapCatPluginContext) => {
+export const plugin_cleanup: PluginModule['plugin_cleanup'] = async (ctx) => {
     try {
+        // 停止 Cookie 自动刷新定时器
         stopAutoRefreshService();
-        pluginState.log('info', '插件已卸载');
+        // 清理解析缓存等状态
+        pluginState.cleanup();
+        ctx.logger.info('[Bilibili] 插件已卸载，资源已清理');
     } catch (e) {
-        pluginState.log('warn', '插件卸载时出错:', e);
+        ctx.logger.warn('[Bilibili] 插件卸载时出错:', e);
     }
 };
 
 /** 获取当前配置 */
-export const plugin_get_config = async (ctx: NapCatPluginContext) => {
+export const plugin_get_config: PluginModule['plugin_get_config'] = async (ctx) => {
     return pluginState.getConfig();
 };
 
 /** 设置配置（完整替换） */
-export const plugin_set_config = async (ctx: NapCatPluginContext, config: any) => {
+export const plugin_set_config: PluginModule['plugin_set_config'] = async (ctx, config) => {
     pluginState.logDebug(`plugin_set_config 调用: ${JSON.stringify(config)}`);
-    pluginState.replaceConfig(ctx, config);
+    pluginState.replaceConfig(ctx, config as any);
     pluginState.log('info', '配置已通过 API 更新');
 };
 
@@ -380,12 +384,8 @@ export const plugin_set_config = async (ctx: NapCatPluginContext, config: any) =
  * 配置变更回调
  * 当 WebUI 中修改配置时触发
  */
-export const plugin_on_config_change = async (
-    ctx: NapCatPluginContext,
-    ui: PluginConfigUIController,
-    key: string,
-    value: any,
-    currentConfig?: Record<string, any>
+export const plugin_on_config_change: PluginModule['plugin_on_config_change'] = async (
+    ctx, ui, key, value, currentConfig
 ) => {
     try {
         pluginState.logDebug(`plugin_on_config_change: key=${key}, value=${JSON.stringify(value)}`);
@@ -396,8 +396,3 @@ export const plugin_on_config_change = async (
     }
 };
 
-export {
-    plugin_init,
-    plugin_onmessage,
-    plugin_cleanup
-};

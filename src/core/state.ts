@@ -5,7 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-onebot/network/plugin-manger';
+import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-onebot/network/plugin/types';
 import type { ActionMap } from 'napcat-types/napcat-onebot/action/index';
 import type { NetworkAdapterConfig } from 'napcat-types/napcat-onebot/config/config';
 import { DEFAULT_CONFIG, getDefaultConfig } from '../config';
@@ -208,6 +208,20 @@ class PluginState {
         this.pluginName = ctx.pluginName || '';
         this.dataPath = ctx.configPath ? path.dirname(ctx.configPath) : path.join(process.cwd(), 'data', 'napcat-plugin-bilibili');
         this.startTime = Date.now();
+    }
+
+    /**
+     * 清理状态（在 plugin_cleanup 中调用）
+     * 热重载时释放所有资源，防止内存泄漏
+     */
+    cleanup(): void {
+        // 清理解析缓存
+        this.parseCache.clear();
+        // 重置状态
+        this.logger = null;
+        this.actions = undefined;
+        this.initialized = false;
+        this.log('info', '状态已清理');
     }
 
     /**

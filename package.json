@@ -1,5 +1,6 @@
 {
     "name": "napcat-plugin-bilibili",
+    "plugin": "B站视频解析",
     "version": "1.0.0",
     "type": "module",
     "main": "index.mjs",
@@ -12,19 +13,31 @@
         "qq",
         "bilibili"
     ],
+    "napcat": {
+        "tags": [
+            "娱乐",
+            "bilibili"
+        ],
+        "minVersion": "4.14.0",
+        "homepage": ""
+    },
     "dependencies": {
-        "napcat-types": "0.0.11"
+        "napcat-types": "0.0.16"
     },
     "devDependencies": {
         "@rollup/plugin-node-resolve": "^15.0.0",
         "@types/express": "^5.0.6",
         "@types/node": "^20.0.0",
+        "napcat-plugin-debug-cli": "^1.2.0",
         "typescript": "^5.0.0",
-        "vite": "^6.0.0"
+        "vite": "^6.0.0",
+        "ws": "^8.18.0"
     },
     "scripts": {
-        "build": "vite build && npm run copy",
-        "copy": "node -e \"const fs=require('fs');const path=require('path');fs.cpSync('src/webui','dist/webui',{recursive:true});fs.cpSync('templates','dist/templates',{recursive:true});const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));delete pkg.devDependencies;delete pkg.scripts;fs.writeFileSync('dist/package.json',JSON.stringify(pkg,null,2));console.log('✅ 已复制 webui、templates 和 package.json 到 dist 目录');\"",
-        "watch": "vite build --watch"
+        "build": "vite build",
+        "dev": "vite build --watch",
+        "push": "vite build",
+        "watch": "vite build --watch",
+        "typecheck": "tsc --noEmit"
     }
 }

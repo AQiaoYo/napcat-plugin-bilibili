@@ -3,7 +3,7 @@
  * 定义 B 站视频解析插件所有的接口和类型
  */
 
-import type { PluginConfigSchema, PluginConfigUIController } from 'napcat-types/napcat-onebot/network/plugin-manger';
+import type { PluginConfigSchema, PluginConfigUIController } from 'napcat-types/napcat-onebot/network/plugin/types';
 
 /**
  * 发送模式枚举

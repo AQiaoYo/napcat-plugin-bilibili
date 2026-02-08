@@ -3,7 +3,7 @@
  * 封装 NapCat Actions 调用
  */
 
-import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin-manger';
+import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
 
 /** 调用 NapCat Action */
 export async function callAction(

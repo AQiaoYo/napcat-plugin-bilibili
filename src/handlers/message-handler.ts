@@ -5,7 +5,7 @@
 
 import { EventType } from 'napcat-types/napcat-onebot/event/index';
 import type { OB11Message } from 'napcat-types/napcat-onebot';
-import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin-manger';
+import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
 import { pluginState } from '../core/state';
 import {
     containsBilibiliLink,
@@ -210,10 +210,7 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
             return;
         }
 
-        // 添加到解析缓存
-        if (cacheTTL > 0) {
-            pluginState.addToParseCache(String(groupId), videoId);
-        }
+        // 注意：CD 在解析成功且消息发送后才添加，避免出错时浪费 CD
 
         // 获取消息 ID 用于表情回复
         const messageId = event.message_id;
@@ -347,6 +344,10 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
         const success = await sendGroupForwardMsg(ctx, groupId, forwardNodes);
         if (success) {
             pluginState.log('info', `视频信息已通过合并转发发送到群 ${groupId}`);
+            // 发送成功后才添加 CD 缓存，出错不计入 CD
+            if (cacheTTL > 0) {
+                pluginState.addToParseCache(String(groupId), videoId);
+            }
         }
 
         // 如果使用群文件方式，上传视频到群文件
