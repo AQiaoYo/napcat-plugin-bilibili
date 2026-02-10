@@ -54,7 +54,7 @@ function getAuthHeaders(): Record<string, string> {
     const credential = pluginState.config.credential;
 
     if (credential?.sessdata && credential?.bili_jct && credential?.dedeuserid) {
-        headers['Cookie'] = `SESSDATA=${credential.sessdata}; bili_jct=${credential.bili_jct}; DedeUserID=${credential.dedeuserid}`;
+        headers['Cookie'] = `SESSDATA=${encodeURIComponent(credential.sessdata)}; bili_jct=${credential.bili_jct}; DedeUserID=${credential.dedeuserid}`;
         pluginState.logDebug('使用登录凭据发送请求');
     }
 
