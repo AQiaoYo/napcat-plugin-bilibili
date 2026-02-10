@@ -859,6 +859,18 @@
                                 </select>
                             </div>
 
+                            <div class="flex items-center justify-between" x-show="config.sendMode === 'with-video'">
+                                <div>
+                                    <div class="font-medium">视频发送方式</div>
+                                    <div class="text-sm text-slate-500">选择视频文件的发送方式，单独发送可避免"资源已过期"问题</div>
+                                </div>
+                                <select x-model="config.videoSendMode"
+                                    class="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-bili-pink">
+                                    <option value="forward">包含在合并转发中</option>
+                                    <option value="separate">单独发送视频消息</option>
+                                </select>
+                            </div>
+
                             <div class="flex items-center justify-between">
                                 <div>
                                     <div class="font-medium">调试模式</div>
@@ -884,6 +896,8 @@
                                     <label class="block text-sm font-medium mb-2">最大视频大小 (MB)</label>
                                     <input type="number" x-model.number="config.maxVideoSizeMB"
                                         class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-bili-pink transition-colors">
+                                    <p class="text-xs text-slate-400 mt-1.5">超过此大小的视频不会作为视频消息发送，仅发送信息卡片；超过 100MB
+                                        的视频会自动转为群文件上传。</p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium mb-2">去重时间 (秒)</label>

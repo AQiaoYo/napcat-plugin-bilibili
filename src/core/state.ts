@@ -9,7 +9,7 @@ import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-oneb
 import type { ActionMap } from 'napcat-types/napcat-onebot/action/index';
 import type { NetworkAdapterConfig } from 'napcat-types/napcat-onebot/config/config';
 import { DEFAULT_CONFIG, getDefaultConfig } from '../config';
-import type { PluginConfig, GroupBilibiliConfig, SendMode, BilibiliCredential, PuppeteerRenderConfig } from '../types';
+import type { PluginConfig, GroupBilibiliConfig, SendMode, VideoSendMode, BilibiliCredential, PuppeteerRenderConfig } from '../types';
 import { encryptString, decryptString } from '../utils/crypto-utils';
 
 /** 日志前缀 */
@@ -49,6 +49,12 @@ function sanitizeConfig(raw: unknown): PluginConfig {
     const rawMaxSize = (raw as Record<string, unknown>)['maxVideoSizeMB'];
     if (typeof rawMaxSize === 'number' && rawMaxSize > 0) {
         out.maxVideoSizeMB = rawMaxSize;
+    }
+
+    // videoSendMode
+    const rawVideoSendMode = (raw as Record<string, unknown>)['videoSendMode'];
+    if (rawVideoSendMode === 'forward' || rawVideoSendMode === 'separate') {
+        out.videoSendMode = rawVideoSendMode as VideoSendMode;
     }
 
     // parseCacheTTL

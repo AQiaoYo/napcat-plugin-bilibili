@@ -12,6 +12,7 @@ export const DEFAULT_CONFIG: PluginConfig = {
     debug: false,
     sendMode: 'with-video',
     maxVideoSizeMB: 100,
+    videoSendMode: 'forward',
     parseCacheTTL: 300, // 默认 5 分钟
     groupConfigs: {},
     puppeteer: {

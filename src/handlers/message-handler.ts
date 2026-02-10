@@ -332,8 +332,11 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
             }
         }
 
-        // 节点：视频文件（如果有，且不需要群文件方式发送）
-        if (videoFilePath && !useGroupFile) {
+        // 获取视频发送方式配置
+        const videoSendMode = pluginState.config.videoSendMode || 'forward';
+
+        // 节点：视频文件（如果有，且不需要群文件方式发送，且选择合并转发模式）
+        if (videoFilePath && !useGroupFile && videoSendMode === 'forward') {
             forwardNodes.push(buildForwardNode(botUserId, botNickname, [{
                 type: 'video',
                 data: { file: videoFilePath }
@@ -347,6 +350,17 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
             // 发送成功后才添加 CD 缓存，出错不计入 CD
             if (cacheTTL > 0) {
                 pluginState.addToParseCache(String(groupId), videoId);
+            }
+        }
+
+        // 单独发送视频消息（如果选择了单独发送模式）
+        if (videoFilePath && !useGroupFile && videoSendMode === 'separate') {
+            const videoSent = await sendGroupMessage(ctx, groupId, [{
+                type: 'video',
+                data: { file: videoFilePath }
+            }]);
+            if (videoSent) {
+                pluginState.log('info', `视频已单独发送到群 ${groupId}`);
             }
         }
 
