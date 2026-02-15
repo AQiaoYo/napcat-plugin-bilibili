@@ -893,17 +893,33 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
+                                    <label class="block text-sm font-medium mb-2">视频质量</label>
+                                    <select x-model="config.videoQuality"
+                                        class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-bili-pink transition-colors">
+                                        <option value="auto">自动（最高质量）</option>
+                                        <option value="4k">4K 超高清</option>
+                                        <option value="1080p60">1080P 60帧</option>
+                                        <option value="1080p">1080P</option>
+                                        <option value="720p">720P</option>
+                                        <option value="480p">480P</option>
+                                    </select>
+                                    <p class="text-xs text-slate-400 mt-1.5">选择期望的视频质量。auto
+                                        模式会自动选择最高质量，指定质量可节省流量。需要登录B站账号才能获取1080P及以上质量。</p>
+                                </div>
+                                <div>
                                     <label class="block text-sm font-medium mb-2">最大视频大小 (MB)</label>
                                     <input type="number" x-model.number="config.maxVideoSizeMB"
                                         class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-bili-pink transition-colors">
                                     <p class="text-xs text-slate-400 mt-1.5">超过此大小的视频不会作为视频消息发送，仅发送信息卡片；超过 100MB
                                         的视频会自动转为群文件上传。</p>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">去重时间 (秒)</label>
-                                    <input type="number" x-model.number="config.parseCacheTTL"
-                                        class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-bili-pink transition-colors">
-                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">去重时间 (秒)</label>
+                                <input type="number" x-model.number="config.parseCacheTTL"
+                                    class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-bili-pink transition-colors">
+                                <p class="text-xs text-slate-400 mt-1.5">同一群内相同链接在此时间内不会重复解析。</p>
                             </div>
                         </div>
 

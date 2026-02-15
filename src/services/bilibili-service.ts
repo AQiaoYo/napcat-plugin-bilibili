@@ -505,6 +505,60 @@ export interface VideoPlayUrlInfo {
 }
 
 /**
+ * DASH 视频流信息
+ */
+export interface DashVideoStream {
+    /** 质量ID */
+    id: number;
+    /** 视频URL（备用URL） */
+    backupUrl: string | string[];
+    /** 带宽 */
+    bandwidth: number;
+    /** 编码格式 */
+    codecs: string;
+    /** 宽度 */
+    width: number;
+    /** 高度 */
+    height: number;
+    /** 帧率 */
+    frameRate: string;
+}
+
+/**
+ * DASH 音频流信息
+ */
+export interface DashAudioStream {
+    /** 质量ID */
+    id: number;
+    /** 音频URL（备用URL） */
+    backupUrl: string | string[];
+    /** 带宽 */
+    bandwidth: number;
+    /** 编码格式 */
+    codecs: string;
+}
+
+/**
+ * DASH 播放信息
+ */
+export interface DashPlayInfo {
+    /** 视频流列表 */
+    video: DashVideoStream[];
+    /** 音频流列表 */
+    audio: DashAudioStream[];
+    /** 时长（秒） */
+    duration: number;
+    /** Dolby音频 */
+    dolby?: {
+        audio?: DashAudioStream[];
+    };
+    /** FLAC音频 */
+    flac?: {
+        audio?: DashAudioStream;
+    };
+}
+
+/**
  * 获取视频临时目录
  */
 function getTempVideoDir(): string {
@@ -516,11 +570,39 @@ function getTempVideoDir(): string {
 }
 
 /**
- * 获取视频播放 URL
- * @param options 视频标识
- * @returns 播放 URL 信息或 null
+ * 获取视频质量ID映射
  */
-export async function fetchVideoPlayUrl(options: { bvid?: string; aid?: number; cid: number }): Promise<VideoPlayUrlInfo | null> {
+const VIDEO_QUALITY_MAP: Record<string, number> = {
+    '4k': 120,
+    '1080p60': 116,
+    '1080p': 80,
+    '720p': 64,
+    '480p': 32,
+    '360p': 16
+};
+
+/**
+ * 根据配置获取请求的视频质量ID
+ * @returns 质量ID
+ */
+function getRequestedQualityId(): number {
+    const configQuality = pluginState.config.videoQuality || 'auto';
+
+    if (configQuality === 'auto') {
+        // 自动模式：根据登录状态选择
+        const isLogged = !!(pluginState.config.credential?.sessdata);
+        return isLogged ? 116 : 80; // 已登录请求1080P60，未登录请求1080P
+    }
+
+    return VIDEO_QUALITY_MAP[configQuality] || 80;
+}
+
+/**
+ * 获取视频播放 URL（DASH格式，支持1080P及以上）
+ * @param options 视频标识
+ * @returns DASH播放信息或 null
+ */
+export async function fetchVideoDashInfo(options: { bvid?: string; aid?: number; cid: number }): Promise<DashPlayInfo | null> {
     try {
         const { bvid, aid, cid } = options;
 
@@ -538,23 +620,20 @@ export async function fetchVideoPlayUrl(options: { bvid?: string; aid?: number; 
         }
         params.set('cid', cid.toString());
 
-        // 根据登录状态设置请求画质
-        const credential = pluginState.config.credential;
-        const isLogged = !!(credential?.sessdata);
+        // 根据配置获取请求的质量ID
+        const requestedQuality = getRequestedQualityId();
+        const isLogged = !!(pluginState.config.credential?.sessdata);
 
-        if (isLogged) {
-            params.set('qn', '80'); // 1080P
-            params.set('fourk', '1'); // 允许 4K
-        } else {
-            params.set('qn', '64'); // 720P (通常未登录最高 480P，请求 720P 会自动降级)
-            params.set('fourk', '0');
-        }
+        params.set('qn', requestedQuality.toString());
+        params.set('fourk', isLogged ? '1' : '0'); // 已登录允许4K
 
-        params.set('fnval', '1'); // MP4 格式
+        // fnval=16 表示请求DASH格式（音视频分离）
+        // fnval=4048 = 16(DASH) + 2048(HDR) + 1024(4K) + 512(杜比) + 256(8K) + 128(杜比视界)
+        params.set('fnval', '4048'); // DASH 格式，支持高质量
         params.set('fnver', '0');
 
         const url = `${BILIBILI_PLAYURL_API}?${params.toString()}`;
-        pluginState.logDebug(`请求视频播放URL: ${url} (已登录: ${isLogged})`);
+        pluginState.logDebug(`请求视频DASH信息: ${url} (已登录: ${isLogged}, 请求质量: ${requestedQuality})`);
 
         const response = await fetch(url, {
             method: 'GET',
@@ -574,20 +653,166 @@ export async function fetchVideoPlayUrl(options: { bvid?: string; aid?: number; 
         }
 
         const playData = data.data;
-        if (!playData?.durl || playData.durl.length === 0) {
-            pluginState.log('warn', '未找到可用的视频下载链接');
+        if (!playData?.dash) {
+            pluginState.log('warn', '未找到DASH格式视频数据');
             return null;
         }
 
-        const firstUrl = playData.durl[0];
-        pluginState.logDebug(`获取视频播放URL成功: quality=${playData.quality}`);
+        const dashData = playData.dash;
+        pluginState.logDebug(`获取DASH信息成功: 视频流=${dashData.video?.length || 0}, 音频流=${dashData.audio?.length || 0}`);
 
         return {
-            videoUrl: firstUrl.url,
-            quality: playData.quality,
-            format: playData.format || 'mp4',
-            timelength: playData.timelength / 1000, // 转换为秒
-            size: firstUrl.size
+            video: dashData.video || [],
+            audio: dashData.audio || [],
+            duration: dashData.duration || 0,
+            dolby: dashData.dolby,
+            flac: dashData.flac
+        };
+    } catch (error) {
+        pluginState.log('error', '获取视频DASH信息异常:', error);
+        return null;
+    }
+}
+
+/**
+ * 获取最高质量的视频流和音频流
+ * @param dashInfo DASH播放信息
+ * @returns 最高质量的视频和音频流
+ */
+export function getHighestQualityStreams(dashInfo: DashPlayInfo): {
+    video: DashVideoStream | null;
+    audio: DashAudioStream | null;
+} {
+    let highestVideo: DashVideoStream | null = null;
+    let highestAudio: DashAudioStream | null = null;
+
+    // 选择视频流
+    if (dashInfo.video && dashInfo.video.length > 0) {
+        const configQuality = pluginState.config.videoQuality || 'auto';
+
+        if (configQuality === 'auto') {
+            // 自动模式：选择质量ID最高的
+            const sortedVideos = [...dashInfo.video].sort((a, b) => b.id - a.id);
+            highestVideo = sortedVideos[0];
+        } else {
+            // 指定质量模式：选择最接近配置质量的流
+            const targetQualityId = VIDEO_QUALITY_MAP[configQuality];
+
+            // 先尝试找到完全匹配的
+            highestVideo = dashInfo.video.find(v => v.id === targetQualityId) || null;
+
+            // 如果没有完全匹配，选择最接近且不超过目标质量的
+            if (!highestVideo) {
+                const lowerOrEqual = dashInfo.video
+                    .filter(v => v.id <= targetQualityId)
+                    .sort((a, b) => b.id - a.id);
+
+                if (lowerOrEqual.length > 0) {
+                    highestVideo = lowerOrEqual[0];
+                } else {
+                    // 如果都超过目标质量，选择最低的
+                    const sorted = [...dashInfo.video].sort((a, b) => a.id - b.id);
+                    highestVideo = sorted[0];
+                }
+            }
+        }
+
+        if (highestVideo) {
+            pluginState.logDebug(`选择视频流: 质量ID=${highestVideo.id}, 分辨率=${highestVideo.width}x${highestVideo.height}`);
+        }
+    }
+
+    // 选择最高质量的音频流（优先级：FLAC > Dolby > 普通音频按带宽排序）
+    const audioStreams: DashAudioStream[] = [];
+
+    // 添加普通音频流
+    if (dashInfo.audio && dashInfo.audio.length > 0) {
+        audioStreams.push(...dashInfo.audio);
+    }
+
+    // 添加 Dolby 音频流
+    if (dashInfo.dolby?.audio && dashInfo.dolby.audio.length > 0) {
+        audioStreams.push(...dashInfo.dolby.audio);
+    }
+
+    // 添加 FLAC 音频流
+    if (dashInfo.flac?.audio) {
+        audioStreams.push(dashInfo.flac.audio);
+    }
+
+    if (audioStreams.length > 0) {
+        // 按优先级排序：FLAC(30251) > Dolby(30250) > 其他按带宽
+        const sortedAudios = audioStreams.sort((a, b) => {
+            const aId = a.id;
+            const bId = b.id;
+
+            // FLAC 最高优先级
+            if (aId === 30251) return -1;
+            if (bId === 30251) return 1;
+
+            // Dolby 次优先级
+            if (aId === 30250) return -1;
+            if (bId === 30250) return 1;
+
+            // 其他按带宽排序
+            return b.bandwidth - a.bandwidth;
+        });
+
+        highestAudio = sortedAudios[0];
+        const audioType = highestAudio.id === 30251 ? 'FLAC' : highestAudio.id === 30250 ? 'Dolby' : '普通';
+        pluginState.logDebug(`选择音频流: 类型=${audioType}, 质量ID=${highestAudio.id}, 带宽=${highestAudio.bandwidth}`);
+    }
+
+    return { video: highestVideo, audio: highestAudio };
+}
+
+/**
+ * 从流信息中提取URL
+ * @param backupUrl 备用URL（可能是字符串或数组）
+ * @returns URL字符串
+ */
+function extractStreamUrl(backupUrl: string | string[]): string {
+    if (Array.isArray(backupUrl) && backupUrl.length > 0) {
+        return backupUrl[0];
+    }
+    if (typeof backupUrl === 'string') {
+        return backupUrl;
+    }
+    return '';
+}
+
+/**
+ * 获取视频播放 URL（兼容旧接口，返回最高质量）
+ * @param options 视频标识
+ * @returns 播放 URL 信息或 null
+ */
+export async function fetchVideoPlayUrl(options: { bvid?: string; aid?: number; cid: number }): Promise<VideoPlayUrlInfo | null> {
+    try {
+        const dashInfo = await fetchVideoDashInfo(options);
+        if (!dashInfo) {
+            return null;
+        }
+
+        const { video, audio } = getHighestQualityStreams(dashInfo);
+        if (!video) {
+            pluginState.log('warn', '未找到可用的视频流');
+            return null;
+        }
+
+        const videoUrl = extractStreamUrl(video.backupUrl);
+        if (!videoUrl) {
+            pluginState.log('warn', '视频流URL为空');
+            return null;
+        }
+
+        // 注意：DASH格式的视频和音频是分离的，这里只返回视频URL
+        // 实际使用时需要同时下载视频和音频并合并
+        return {
+            videoUrl,
+            quality: video.id,
+            format: 'dash',
+            timelength: dashInfo.duration,
+            size: undefined // DASH格式无法预先知道大小
         };
     } catch (error) {
         pluginState.log('error', '获取视频播放URL异常:', error);
@@ -654,6 +879,192 @@ export async function downloadVideo(videoUrl: string, bvid: string, maxSizeMB: n
         return filePath;
     } catch (error) {
         pluginState.log('error', '下载视频异常:', error);
+        return null;
+    }
+}
+
+/**
+ * 下载流文件（视频流或音频流）
+ * @param url 流URL
+ * @param outputPath 输出路径
+ * @returns 是否成功
+ */
+async function downloadStream(url: string, outputPath: string): Promise<boolean> {
+    try {
+        pluginState.logDebug(`开始下载流: ${outputPath}`);
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                ...DEFAULT_HEADERS,
+                'Accept': '*/*'
+            }
+        });
+
+        if (!response.ok) {
+            pluginState.log('error', `下载流失败: HTTP ${response.status}`);
+            return false;
+        }
+
+        const buffer = await response.arrayBuffer();
+        fs.writeFileSync(outputPath, Buffer.from(buffer));
+
+        const sizeMB = buffer.byteLength / 1024 / 1024;
+        pluginState.logDebug(`流下载完成: ${outputPath} (${sizeMB.toFixed(2)}MB)`);
+
+        return true;
+    } catch (error) {
+        pluginState.log('error', `下载流异常: ${outputPath}`, error);
+        return false;
+    }
+}
+
+/**
+ * 使用 FFmpeg 合并视频和音频
+ * @param videoPath 视频文件路径
+ * @param audioPath 音频文件路径
+ * @param outputPath 输出文件路径
+ * @returns 是否成功
+ */
+async function mergeVideoAudioWithFFmpeg(videoPath: string, audioPath: string, outputPath: string): Promise<boolean> {
+    try {
+        pluginState.log('info', '开始使用 FFmpeg 合并视频和音频...');
+
+        const { exec } = await import('child_process');
+        const { promisify } = await import('util');
+        const execAsync = promisify(exec);
+
+        // 构建 FFmpeg 命令
+        const command = `ffmpeg -i "${videoPath}" -i "${audioPath}" -c:v copy -c:a copy -y "${outputPath}"`;
+        pluginState.logDebug(`FFmpeg 命令: ${command}`);
+
+        await execAsync(command);
+        pluginState.log('info', `视频合并成功: ${outputPath}`);
+
+        return true;
+    } catch (error: any) {
+        pluginState.log('error', 'FFmpeg 合并失败:', error);
+
+        // 检查是否是 FFmpeg 未安装
+        if (error.message?.includes('ffmpeg')) {
+            pluginState.log('warn', '未检测到 FFmpeg，请安装 FFmpeg 以支持视频合并功能');
+        }
+
+        return false;
+    }
+}
+
+/**
+ * 下载并合并 DASH 视频（支持1080P及以上）
+ * @param bvid BV号
+ * @param cid 视频CID
+ * @param maxSizeMB 最大大小限制 (MB)
+ * @returns 本地文件路径或 null
+ */
+export async function downloadDashVideo(bvid: string, cid: number, maxSizeMB: number = 100): Promise<string | null> {
+    let tempVideoPath: string | null = null;
+    let tempAudioPath: string | null = null;
+
+    try {
+        pluginState.log('info', `开始下载 DASH 视频: ${bvid}`);
+
+        // 获取 DASH 信息
+        const dashInfo = await fetchVideoDashInfo({ bvid, cid });
+        if (!dashInfo) {
+            pluginState.log('error', '获取 DASH 信息失败');
+            return null;
+        }
+
+        // 获取最高质量的视频流和音频流
+        const { video, audio } = getHighestQualityStreams(dashInfo);
+        if (!video || !audio) {
+            pluginState.log('error', '未找到可用的视频流或音频流');
+            return null;
+        }
+
+        const videoUrl = extractStreamUrl(video.backupUrl);
+        const audioUrl = extractStreamUrl(audio.backupUrl);
+
+        if (!videoUrl || !audioUrl) {
+            pluginState.log('error', '视频流或音频流 URL 为空');
+            return null;
+        }
+
+        pluginState.log('info', `视频质量: ID=${video.id}, 分辨率=${video.width}x${video.height}`);
+        pluginState.log('info', `音频质量: ID=${audio.id}, 带宽=${audio.bandwidth}`);
+
+        // 创建临时文件路径
+        const tempDir = getTempVideoDir();
+        const timestamp = Date.now();
+        tempVideoPath = path.join(tempDir, `${bvid}_${timestamp}_video.m4v`);
+        tempAudioPath = path.join(tempDir, `${bvid}_${timestamp}_audio.m4a`);
+        const outputPath = path.join(tempDir, `${bvid}_${timestamp}.mp4`);
+
+        // 下载视频流
+        pluginState.log('info', '正在下载视频流...');
+        const videoSuccess = await downloadStream(videoUrl, tempVideoPath);
+        if (!videoSuccess) {
+            return null;
+        }
+
+        // 检查视频大小
+        const videoStats = fs.statSync(tempVideoPath);
+        const videoSizeMB = videoStats.size / 1024 / 1024;
+        if (videoSizeMB > maxSizeMB) {
+            pluginState.log('warn', `视频大小 ${videoSizeMB.toFixed(2)}MB 超过限制 ${maxSizeMB}MB`);
+            fs.unlinkSync(tempVideoPath);
+            return null;
+        }
+
+        // 下载音频流
+        pluginState.log('info', '正在下载音频流...');
+        const audioSuccess = await downloadStream(audioUrl, tempAudioPath);
+        if (!audioSuccess) {
+            fs.unlinkSync(tempVideoPath);
+            return null;
+        }
+
+        // 合并视频和音频
+        const mergeSuccess = await mergeVideoAudioWithFFmpeg(tempVideoPath, tempAudioPath, outputPath);
+
+        // 清理临时文件
+        try {
+            fs.unlinkSync(tempVideoPath);
+            fs.unlinkSync(tempAudioPath);
+        } catch (e) {
+            pluginState.logDebug('清理临时文件失败');
+        }
+
+        if (!mergeSuccess) {
+            pluginState.log('error', '视频合并失败');
+            return null;
+        }
+
+        // 检查合并后的文件大小
+        const outputStats = fs.statSync(outputPath);
+        const outputSizeMB = outputStats.size / 1024 / 1024;
+        pluginState.log('info', `视频下载并合并完成: ${outputPath} (${outputSizeMB.toFixed(2)}MB)`);
+
+        return outputPath;
+    } catch (error) {
+        pluginState.log('error', '下载 DASH 视频异常:', error);
+
+        // 清理临时文件
+        if (tempVideoPath && fs.existsSync(tempVideoPath)) {
+            try {
+                fs.unlinkSync(tempVideoPath);
+            } catch (e) {
+                // 忽略
+            }
+        }
+        if (tempAudioPath && fs.existsSync(tempAudioPath)) {
+            try {
+                fs.unlinkSync(tempAudioPath);
+            } catch (e) {
+                // 忽略
+            }
+        }
+
         return null;
     }
 }

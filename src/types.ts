@@ -30,6 +30,17 @@ export interface PuppeteerRenderConfig {
 }
 
 /**
+ * 视频质量选项
+ * - auto: 自动选择最高质量（默认）
+ * - 4k: 4K超高清
+ * - 1080p60: 1080P 60帧
+ * - 1080p: 1080P
+ * - 720p: 720P
+ * - 480p: 480P
+ */
+export type VideoQuality = 'auto' | '4k' | '1080p60' | '1080p' | '720p' | '480p';
+
+/**
  * 插件主配置接口
  */
 export interface PluginConfig {
@@ -45,6 +56,8 @@ export interface PluginConfig {
     videoSendMode: VideoSendMode;
     /** 解析缓存过期时间（秒），同一群内相同链接在此时间内不会重复解析，默认 300 秒（5分钟） */
     parseCacheTTL: number;
+    /** 期望的视频质量，默认 auto 自动选择最高质量 */
+    videoQuality?: VideoQuality;
     /** B 站登录凭据 */
     credential?: BilibiliCredential;
     /** 按群的单独配置 */

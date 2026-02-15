@@ -11,10 +11,9 @@ import {
     containsBilibiliLink,
     extractVideoId,
     parseAndFetchVideoInfo,
-    parseAndFetchVideoWithDownload,
     buildVideoMessage,
     buildVideoInfoMessages,
-    downloadVideo,
+    downloadDashVideo,
     cleanupTempVideo,
     extractLinkFromSegments
 } from '../services/bilibili-service';
@@ -232,33 +231,38 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
 
         if (sendMode === 'with-video') {
             // 模式：发送信息卡片 + 视频
-            const result = await parseAndFetchVideoWithDownload(rawMessage);
-            if (!result) {
+            videoInfo = await parseAndFetchVideoInfo(rawMessage);
+            if (!videoInfo) {
                 pluginState.logDebug(`无法获取视频信息，跳过`);
                 return;
             }
 
-            videoInfo = result.videoInfo;
-            const { playUrl } = result;
             pluginState.log('info', `解析视频成功: ${videoInfo.title} (${videoInfo.bvid})`);
 
-            // 尝试下载视频
-            if (playUrl?.videoUrl) {
-                // 检查视频大小 (NapCat 视频消息最大 100MB)
-                const videoSizeMB = playUrl.size ? playUrl.size / 1024 / 1024 : 0;
+            // 获取 cid（视频分P的ID，默认第一P）
+            const cid = videoInfo.cid || videoInfo.pages?.[0]?.cid;
+            if (cid) {
+                // 使用 DASH 格式下载高质量视频（支持1080P及以上）
+                pluginState.log('info', '尝试下载 DASH 格式高质量视频...');
+                videoFilePath = await downloadDashVideo(videoInfo.bvid, cid, maxVideoSizeMB);
 
-                if (videoSizeMB > 100) {
-                    // 超过 100MB：使用群文件方式发送
-                    pluginState.log('info', `视频大小 ${videoSizeMB.toFixed(2)}MB 超过 100MB 限制，将使用群文件方式发送`);
-                    videoFilePath = await downloadVideo(playUrl.videoUrl, videoInfo.bvid, 500); // 群文件支持更大尺寸
-                    useGroupFile = true;
-                } else if (videoSizeMB > 0 && videoSizeMB > maxVideoSizeMB) {
-                    // 超过配置限制但不超过 100MB：仅发送信息卡片
-                    pluginState.log('info', `视频大小 ${videoSizeMB.toFixed(2)}MB 超过配置限制 ${maxVideoSizeMB}MB，仅发送信息卡片`);
+                if (videoFilePath) {
+                    // 检查文件大小决定发送方式
+                    const fs = await import('fs');
+                    const stats = fs.statSync(videoFilePath);
+                    const videoSizeMB = stats.size / 1024 / 1024;
+
+                    if (videoSizeMB > 100) {
+                        pluginState.log('info', `视频大小 ${videoSizeMB.toFixed(2)}MB 超过 100MB 限制，将使用群文件方式发送`);
+                        useGroupFile = true;
+                    } else {
+                        pluginState.log('info', `视频下载成功，大小 ${videoSizeMB.toFixed(2)}MB`);
+                    }
                 } else {
-                    // 正常下载视频
-                    videoFilePath = await downloadVideo(playUrl.videoUrl, videoInfo.bvid, maxVideoSizeMB);
+                    pluginState.log('warn', 'DASH 视频下载失败，可能需要安装 FFmpeg');
                 }
+            } else {
+                pluginState.log('warn', '无法获取视频 cid，无法下载视频');
             }
         } else {
             // 模式：仅发送信息卡片

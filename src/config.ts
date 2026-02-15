@@ -14,6 +14,7 @@ export const DEFAULT_CONFIG: PluginConfig = {
     maxVideoSizeMB: 100,
     videoSendMode: 'forward',
     parseCacheTTL: 300, // 默认 5 分钟
+    videoQuality: 'auto', // 默认自动选择最高质量
     groupConfigs: {},
     puppeteer: {
         enabled: false,
